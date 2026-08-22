@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { renderEmailHtml } from "@/lib/email-template";
 
 export function isResendConfigured() {
   return Boolean(process.env.RESEND_API_KEY?.trim());
@@ -29,18 +30,15 @@ export function getFromEmail() {
   return "Nexus Global <hola@nexusglobalsuministros.com>";
 }
 
-export function textToHtml(body: string) {
-  const escaped = body
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return `<div style="font-family:Inter,Arial,sans-serif;line-height:1.6;white-space:pre-wrap">${escaped}</div>`;
+export function textToHtml(body: string, locale?: "es" | "en") {
+  return renderEmailHtml(body, { locale });
 }
 
 async function sendViaResend(params: {
   to: string;
   subject: string;
   html: string;
+  text?: string;
   replyTo?: string;
 }) {
   const resend = new Resend(process.env.RESEND_API_KEY);
@@ -49,6 +47,7 @@ async function sendViaResend(params: {
     to: params.to,
     subject: params.subject,
     html: params.html,
+    text: params.text,
     replyTo: params.replyTo || getReplyToEmail(),
   });
 
@@ -73,6 +72,7 @@ export async function sendEmail(params: {
   to: string;
   subject: string;
   html: string;
+  text?: string;
   replyTo?: string;
 }) {
   if (!isResendConfigured()) {

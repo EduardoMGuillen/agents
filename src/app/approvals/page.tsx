@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Approval } from "@/lib/types";
+import { renderEmailHtml } from "@/lib/email-template";
 
 const GAP_MS = 4000;
 
@@ -211,9 +211,13 @@ export default function ApprovalsPage() {
                   Ver lead
                 </Link>
               </div>
-              <pre className="mb-3 max-h-56 overflow-auto whitespace-pre-wrap rounded-xl bg-[var(--bg)] p-3 text-sm text-[var(--muted)]">
-                {a.body}
-              </pre>
+              <iframe
+                title={a.subject}
+                className="mb-3 h-[420px] w-full border border-[var(--line)] bg-white"
+                srcDoc={renderEmailHtml(a.body, {
+                  previewLogo: "/NexusGPTHD.png",
+                })}
+              />
               {a.status === "pending" && (
                 <div className="flex gap-2">
                   <button

@@ -8,10 +8,12 @@ export async function approveAndSend(approvalId: string) {
     throw new Error(`Approval en estado ${approval.status}`);
   }
 
+  const lead = await store.getLead(approval.lead_id);
   const result = await sendEmail({
     to: approval.to_email,
     subject: approval.subject,
-    html: textToHtml(approval.body),
+    html: textToHtml(approval.body, lead?.locale),
+    text: approval.body,
   });
 
   if (!result.ok && !result.simulated) {
@@ -38,7 +40,6 @@ export async function approveAndSend(approvalId: string) {
     from_email: approval.from_email ?? getFromEmail(),
   });
 
-  const lead = await store.getLead(approval.lead_id);
   if (lead && (lead.status === "new" || lead.status === "qualified")) {
     await store.updateLead(lead.id, {
       status: lead.status === "qualified" ? "qualified" : "contacted",
