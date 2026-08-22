@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import type { Approval } from "@/lib/types";
 import { renderEmailHtml } from "@/lib/email-template";
 
 const GAP_MS = 4000;
