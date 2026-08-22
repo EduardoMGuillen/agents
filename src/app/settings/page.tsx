@@ -35,8 +35,7 @@ export default function SettingsPage() {
     <div className="space-y-5">
       <div>
         <h1
-          className="text-3xl font-bold"
-          style={{ fontFamily: "var(--font-syne), sans-serif" }}
+          className="display text-4xl"
         >
           Setup
         </h1>

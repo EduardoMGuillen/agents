@@ -59,8 +59,7 @@ export default function LeadsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1
-            className="text-3xl font-bold"
-            style={{ fontFamily: "var(--font-syne), sans-serif" }}
+            className="display text-4xl"
           >
             Leads
           </h1>

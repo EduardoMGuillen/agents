@@ -1,22 +1,23 @@
 import type { Metadata } from "next";
-import { Outfit, Syne } from "next/font/google";
+import { Cormorant_Garamond, Outfit } from "next/font/google";
 import { AppShell } from "@/components/app-shell";
 import "./globals.css";
 
-const outfit = Outfit({
-  variable: "--font-outfit",
+const sans = Outfit({
+  variable: "--font-sans-body",
   subsets: ["latin"],
+  weight: ["300", "400", "500"],
 });
 
-const syne = Syne({
-  variable: "--font-syne",
+const serif = Cormorant_Garamond({
+  variable: "--font-serif",
   subsets: ["latin"],
+  weight: ["500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "Nexus Office — Sales",
-  description:
-    "CRM y agentes de marketing/ventas para Nexus Global. Tú construyes los websites.",
+  title: "Nexus — Atelier",
+  description: "Dirección comercial de Nexus Global.",
 };
 
 export default function RootLayout({
@@ -25,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${outfit.variable} ${syne.variable} h-full`}>
+    <html lang="es" className={`${sans.variable} ${serif.variable} h-full`}>
       <body className="min-h-full antialiased">
         <AppShell>{children}</AppShell>
       </body>

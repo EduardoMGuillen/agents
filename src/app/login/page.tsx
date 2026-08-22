@@ -1,8 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
 function LoginForm() {
   const router = useRouter();
@@ -30,22 +29,31 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <form onSubmit={onSubmit} className="panel w-full max-w-md space-y-4 p-6">
+    <div className="grid min-h-screen md:grid-cols-2">
+      <div className="hidden flex-col justify-between border-r border-[var(--line)] bg-[var(--paper)] px-14 py-12 md:flex">
+        <p className="kicker">Nexus Global</p>
         <div>
-          <p className="text-sm text-[var(--accent)]">Nexus Office</p>
-          <h1
-            className="text-2xl font-bold"
-            style={{ fontFamily: "var(--font-syne), sans-serif" }}
-          >
-            Acceso
+          <h1 className="display text-6xl">
+            Una mesa.
+            <br />
+            Un estudio.
           </h1>
-          <p className="text-sm text-[var(--muted)]">
-            Panel de sales/marketing. Solo tú.
+          <p className="mt-6 max-w-sm text-[var(--muted)]">
+            Dirección comercial privada.
           </p>
         </div>
-        <div>
-          <label className="label">Password</label>
+        <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)]">
+          Solo personal autorizado
+        </p>
+      </div>
+      <form
+        onSubmit={onSubmit}
+        className="flex flex-col justify-center px-8 py-16 md:px-16"
+      >
+        <p className="kicker md:hidden">Nexus Global</p>
+        <h2 className="display mt-4 text-4xl">Entrar</h2>
+        <div className="mt-10 max-w-sm">
+          <label className="label">Clave</label>
           <input
             type="password"
             className="field"
@@ -55,9 +63,11 @@ function LoginForm() {
             autoFocus
           />
         </div>
-        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        <button className="btn btn-primary w-full" disabled={busy}>
-          {busy ? "…" : "Entrar"}
+        {error && (
+          <p className="mt-4 text-sm text-[var(--danger)]">{error}</p>
+        )}
+        <button className="btn btn-primary mt-10 w-fit" disabled={busy}>
+          {busy ? "…" : "Continuar"}
         </button>
       </form>
     </div>
@@ -66,7 +76,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<p className="p-8 text-[var(--muted)]">Cargando…</p>}>
+    <Suspense fallback={<p className="kicker p-12">Un momento</p>}>
       <LoginForm />
     </Suspense>
   );

@@ -107,8 +107,7 @@ export default function LeadDetailPage({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1
-            className="text-3xl font-bold"
-            style={{ fontFamily: "var(--font-syne), sans-serif" }}
+            className="display text-4xl"
           >
             {lead.company || lead.name || "Lead"}
           </h1>
