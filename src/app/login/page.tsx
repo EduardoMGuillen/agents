@@ -2,6 +2,8 @@
 
 import { FormEvent, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
+import { motion } from "framer-motion";
 
 function LoginForm() {
   const router = useRouter();
@@ -30,8 +32,17 @@ function LoginForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] px-4">
-      <form onSubmit={onSubmit} className="panel w-full max-w-sm p-6">
-        <p className="text-sm font-semibold">Nexus</p>
+      <motion.form
+        onSubmit={onSubmit}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className="panel w-full max-w-sm p-6"
+      >
+        <div className="mb-4 flex items-center gap-3">
+          <Image src="/NexusGPTHD.png" alt="Nexus" width={40} height={40} />
+          <p className="text-sm font-semibold">Nexus</p>
+        </div>
         <h1 className="display mt-1 text-xl">Sign in</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">Internal sales ops.</p>
         <div className="mt-6">
@@ -49,7 +60,7 @@ function LoginForm() {
         <button className="btn btn-primary mt-5 w-full" disabled={busy}>
           {busy ? "…" : "Continue"}
         </button>
-      </form>
+      </motion.form>
     </div>
   );
 }

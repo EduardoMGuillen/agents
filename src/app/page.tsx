@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 type DashboardData = {
   stats: {
@@ -90,12 +91,18 @@ export default function DashboardPage() {
       )}
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((c) => (
-          <div key={c.label} className="panel p-4">
+        {cards.map((c, i) => (
+          <motion.div
+            key={c.label}
+            className="panel panel-hover p-4"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.06 * i, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          >
             <p className="text-sm text-[var(--muted)]">{c.label}</p>
             <p className="mt-2 text-3xl font-semibold tracking-tight">{c.value}</p>
             <p className="mt-1 text-xs text-[var(--muted)]">{c.hint}</p>
-          </div>
+          </motion.div>
         ))}
       </section>
 

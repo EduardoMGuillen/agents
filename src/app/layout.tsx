@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { IBM_Plex_Sans } from "next/font/google";
 import { AppShell } from "@/components/app-shell";
 import "./globals.css";
 
-const sans = Inter({
+const sans = IBM_Plex_Sans({
   variable: "--font-sans-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
   title: "Nexus Office",
-  description: "Sales and marketing ops for Nexus Global.",
+  description: "Sales ops — Nexus Global",
+  icons: { icon: "/NexusGPTHD.png" },
 };
 
 export default function RootLayout({
