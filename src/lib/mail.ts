@@ -1,4 +1,3 @@
-import nodemailer from "nodemailer";
 import { Resend } from "resend";
 
 export function isResendConfigured() {
@@ -14,7 +13,7 @@ export function isSmtpConfigured() {
 }
 
 export function isMailConfigured() {
-  return isResendConfigured() || isSmtpConfigured();
+  return isResendConfigured();
 }
 
 export function getReplyToEmail() {
@@ -27,10 +26,7 @@ export function getReplyToEmail() {
 
 export function getFromEmail() {
   if (process.env.RESEND_FROM_EMAIL) return process.env.RESEND_FROM_EMAIL;
-  if (process.env.SMTP_USER) {
-    return `Nexus Global <${process.env.SMTP_USER}>`;
-  }
-  return "Nexus Global <onboarding@resend.dev>";
+  return "Nexus Global <hola@nexusglobalsuministros.com>";
 }
 
 export function textToHtml(body: string) {
@@ -39,38 +35,6 @@ export function textToHtml(body: string) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
   return `<div style="font-family:Inter,Arial,sans-serif;line-height:1.6;white-space:pre-wrap">${escaped}</div>`;
-}
-
-async function sendViaSmtp(params: {
-  to: string;
-  subject: string;
-  html: string;
-  replyTo?: string;
-}) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 465),
-    secure: Number(process.env.SMTP_PORT || 465) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-
-  const info = await transporter.sendMail({
-    from: getFromEmail(),
-    to: params.to,
-    subject: params.subject,
-    html: params.html,
-    replyTo: params.replyTo || getReplyToEmail(),
-  });
-
-  return {
-    ok: true as const,
-    simulated: false as const,
-    id: info.messageId,
-    provider: "smtp" as const,
-  };
 }
 
 async function sendViaResend(params: {
@@ -111,47 +75,17 @@ export async function sendEmail(params: {
   html: string;
   replyTo?: string;
 }) {
-  if (isResendConfigured()) {
-    const result = await sendViaResend(params);
-    if (result.ok) return result;
-    if (isSmtpConfigured()) {
-      try {
-        return await sendViaSmtp(params);
-      } catch (e) {
-        return {
-          ok: false as const,
-          simulated: false as const,
-          error:
-            (result.error || "Resend failed") +
-            " / SMTP: " +
-            (e instanceof Error ? e.message : "error"),
-          provider: "none" as const,
-        };
-      }
-    }
-    return result;
+  if (!isResendConfigured()) {
+    return {
+      ok: false as const,
+      simulated: true as const,
+      id: `sim_${Date.now()}`,
+      error: "Falta RESEND_API_KEY — no se envía (solo Resend)",
+      provider: "none" as const,
+    };
   }
 
-  if (isSmtpConfigured()) {
-    try {
-      return await sendViaSmtp(params);
-    } catch (e) {
-      return {
-        ok: false as const,
-        simulated: false as const,
-        error: e instanceof Error ? e.message : "SMTP error",
-        provider: "smtp" as const,
-      };
-    }
-  }
-
-  return {
-    ok: false as const,
-    simulated: true as const,
-    id: `sim_${Date.now()}`,
-    error: "Sin Resend ni SMTP — email simulado",
-    provider: "none" as const,
-  };
+  return sendViaResend(params);
 }
 
 /** @deprecated use sendEmail */
