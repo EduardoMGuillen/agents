@@ -58,6 +58,20 @@ export const store = {
     return data as Lead | null;
   },
 
+  async getLeadByEmail(email: string): Promise<Lead | null> {
+    const local = active();
+    if (local) return local.getLeadByEmail(email);
+    const { data, error } = await getAdminClient()
+      .from("leads")
+      .select("*")
+      .ilike("email", email)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data as Lead | null;
+  },
+
   async createLead(
     input: Partial<Lead> & { source?: LeadSource },
   ): Promise<Lead> {

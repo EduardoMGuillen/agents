@@ -53,6 +53,13 @@ export const memoryStore = {
     return db().leads.find((l) => l.id === id) ?? null;
   },
 
+  async getLeadByEmail(email: string) {
+    const needle = email.toLowerCase();
+    return (
+      db().leads.find((l) => (l.email || "").toLowerCase() === needle) ?? null
+    );
+  },
+
   async createLead(
     input: Partial<Lead> & { source?: LeadSource },
   ): Promise<Lead> {

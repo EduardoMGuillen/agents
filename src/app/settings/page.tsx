@@ -75,6 +75,20 @@ export default function SettingsPage() {
       </section>
 
       <section className="panel space-y-3 p-4">
+        <h2 className="font-semibold">Respuestas de email</h2>
+        <p className="text-sm text-[var(--muted)]">
+          Reply-To apunta a tu Proton, así ves el reply en el inbox. Resend
+          inbound manda el mismo reply al CRM cuando el MX de recepción esté
+          verificado.
+        </p>
+        <pre className="overflow-x-auto rounded-xl bg-[var(--bg)] p-3 text-xs text-[var(--muted)]">{`DNS (dominio raíz nexusglobalsuministros.com)
+Tipo: MX
+Nombre: @
+Prioridad: 9
+Valor: inbound-smtp.us-east-1.amazonaws.com`}</pre>
+      </section>
+
+      <section className="panel space-y-3 p-4">
         <h2 className="font-semibold">Webhook del form (tu web)</h2>
         <pre className="overflow-x-auto rounded-xl bg-[var(--bg)] p-3 text-xs text-[var(--accent)]">
           {`${origin}/api/webhooks/form`}
@@ -92,7 +106,7 @@ export default function SettingsPage() {
           <li>Marketing → genera prospectos</li>
           <li>Completa emails faltantes</li>
           <li>Lead → Sales: primer email → Approvals → Aprobar (SMTP envía)</li>
-          <li>Si responden → pega inbound → Sales reply</li>
+          <li>Si responden el mail → entra al lead + draft en Approvals, y te llega copia a Proton</li>
           <li>Entregar a Eduardo → cotizas y construyes</li>
         </ol>
       </section>

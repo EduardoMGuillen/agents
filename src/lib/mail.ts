@@ -17,6 +17,14 @@ export function isMailConfigured() {
   return isResendConfigured() || isSmtpConfigured();
 }
 
+export function getReplyToEmail() {
+  return (
+    process.env.INBOUND_REPLY_TO?.trim() ||
+    process.env.OWNER_NOTIFY_EMAIL?.trim() ||
+    undefined
+  );
+}
+
 export function getFromEmail() {
   if (process.env.RESEND_FROM_EMAIL) return process.env.RESEND_FROM_EMAIL;
   if (process.env.SMTP_USER) {
@@ -54,7 +62,7 @@ async function sendViaSmtp(params: {
     to: params.to,
     subject: params.subject,
     html: params.html,
-    replyTo: params.replyTo || process.env.OWNER_NOTIFY_EMAIL || undefined,
+    replyTo: params.replyTo || getReplyToEmail(),
   });
 
   return {
@@ -77,7 +85,7 @@ async function sendViaResend(params: {
     to: params.to,
     subject: params.subject,
     html: params.html,
-    replyTo: params.replyTo,
+    replyTo: params.replyTo || getReplyToEmail(),
   });
 
   if (error) {

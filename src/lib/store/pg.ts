@@ -54,6 +54,14 @@ export const pgStore = {
     return rows[0] ? mapLead(rows[0]) : null;
   },
 
+  async getLeadByEmail(email: string) {
+    const { rows } = await query(
+      `select * from leads where lower(email) = lower($1) order by updated_at desc limit 1`,
+      [email],
+    );
+    return rows[0] ? mapLead(rows[0]) : null;
+  },
+
   async createLead(input: Partial<Lead> & { source?: LeadSource }) {
     const id = randomUUID();
     const { rows } = await query(
