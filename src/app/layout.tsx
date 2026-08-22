@@ -1,23 +1,16 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Outfit } from "next/font/google";
+import { Inter } from "next/font/google";
 import { AppShell } from "@/components/app-shell";
 import "./globals.css";
 
-const sans = Outfit({
+const sans = Inter({
   variable: "--font-sans-body",
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
-});
-
-const serif = Cormorant_Garamond({
-  variable: "--font-serif",
-  subsets: ["latin"],
-  weight: ["500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "Nexus — Atelier",
-  description: "Dirección comercial de Nexus Global.",
+  title: "Nexus Office",
+  description: "Sales and marketing ops for Nexus Global.",
 };
 
 export default function RootLayout({
@@ -26,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${sans.variable} ${serif.variable} h-full`}>
+    <html lang="es" className={`${sans.variable} h-full`}>
       <body className="min-h-full antialiased">
         <AppShell>{children}</AppShell>
       </body>

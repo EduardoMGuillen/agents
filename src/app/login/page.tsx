@@ -29,31 +29,13 @@ function LoginForm() {
   }
 
   return (
-    <div className="grid min-h-screen md:grid-cols-2">
-      <div className="hidden flex-col justify-between border-r border-[var(--line)] bg-[var(--paper)] px-14 py-12 md:flex">
-        <p className="kicker">Nexus Global</p>
-        <div>
-          <h1 className="display text-6xl">
-            Una mesa.
-            <br />
-            Un estudio.
-          </h1>
-          <p className="mt-6 max-w-sm text-[var(--muted)]">
-            Dirección comercial privada.
-          </p>
-        </div>
-        <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)]">
-          Solo personal autorizado
-        </p>
-      </div>
-      <form
-        onSubmit={onSubmit}
-        className="flex flex-col justify-center px-8 py-16 md:px-16"
-      >
-        <p className="kicker md:hidden">Nexus Global</p>
-        <h2 className="display mt-4 text-4xl">Entrar</h2>
-        <div className="mt-10 max-w-sm">
-          <label className="label">Clave</label>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] px-4">
+      <form onSubmit={onSubmit} className="panel w-full max-w-sm p-6">
+        <p className="text-sm font-semibold">Nexus</p>
+        <h1 className="display mt-1 text-xl">Sign in</h1>
+        <p className="mt-1 text-sm text-[var(--muted)]">Internal sales ops.</p>
+        <div className="mt-6">
+          <label className="label">Password</label>
           <input
             type="password"
             className="field"
@@ -63,11 +45,9 @@ function LoginForm() {
             autoFocus
           />
         </div>
-        {error && (
-          <p className="mt-4 text-sm text-[var(--danger)]">{error}</p>
-        )}
-        <button className="btn btn-primary mt-10 w-fit" disabled={busy}>
-          {busy ? "…" : "Continuar"}
+        {error && <p className="mt-3 text-sm text-[var(--danger)]">{error}</p>}
+        <button className="btn btn-primary mt-5 w-full" disabled={busy}>
+          {busy ? "…" : "Continue"}
         </button>
       </form>
     </div>
@@ -76,7 +56,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<p className="kicker p-12">Un momento</p>}>
+    <Suspense fallback={<p className="p-8 text-[var(--muted)]">Loading…</p>}>
       <LoginForm />
     </Suspense>
   );

@@ -107,7 +107,7 @@ export default function LeadDetailPage({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1
-            className="display text-4xl"
+            className="display text-2xl"
           >
             {lead.company || lead.name || "Lead"}
           </h1>

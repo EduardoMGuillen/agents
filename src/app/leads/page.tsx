@@ -59,7 +59,7 @@ export default function LeadsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1
-            className="display text-4xl"
+            className="display text-2xl"
           >
             Leads
           </h1>

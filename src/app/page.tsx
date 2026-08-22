@@ -32,27 +32,16 @@ type DashboardData = {
 };
 
 const EVENT_COPY: Record<string, string> = {
-  lead_created: "Alta en cartera",
-  draft_created: "Borrador de salida",
-  email_sent: "Correspondencia enviada",
-  email_simulated: "Envío simulado",
-  email_rejected: "Envío rechazado",
-  reply_drafted: "Respuesta preparada",
-  handoff: "Entrega a dirección",
-  prospect_batch: "Prospección",
-  form_submission: "Consulta desde la web",
+  lead_created: "Lead created",
+  draft_created: "Draft ready",
+  email_sent: "Email sent",
+  email_simulated: "Email simulated",
+  email_rejected: "Email rejected",
+  reply_drafted: "Reply drafted",
+  handoff: "Handed off to you",
+  prospect_batch: "Prospect batch",
+  form_submission: "Website form",
 };
-
-function eventLabel(type: string) {
-  return EVENT_COPY[type] || type.replaceAll("_", " ");
-}
-
-function agentLabel(agent: string) {
-  if (agent === "sales_agent") return "Comercial";
-  if (agent === "marketing_agent") return "Prospección";
-  if (agent === "system") return "Casa";
-  return agent;
-}
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -65,133 +54,96 @@ export default function DashboardPage() {
       .catch((e) => setError(String(e)));
   }, []);
 
-  if (error) {
-    return <p className="text-[var(--danger)]">{error}</p>;
-  }
+  if (error) return <p className="text-[var(--danger)]">{error}</p>;
+  if (!data) return <p className="text-[var(--muted)]">Loading…</p>;
 
-  if (!data) {
-    return <p className="kicker">Preparando el escritorio</p>;
-  }
-
-  const figures = [
-    { label: "Cartera", value: data.stats.totalLeads, note: `${data.stats.newLeads} nuevas` },
-    { label: "Por firmar", value: data.stats.pendingApprovals, note: "correspondencia" },
-    { label: "En tu mesa", value: data.stats.handedOff, note: "cierre y obra" },
-    { label: "Cerrados", value: data.stats.won, note: `índice ${data.stats.avgScore}` },
+  const cards = [
+    { label: "Leads", value: data.stats.totalLeads, hint: `${data.stats.newLeads} new` },
+    { label: "Approvals", value: data.stats.pendingApprovals, hint: "waiting on you" },
+    { label: "Handoff", value: data.stats.handedOff, hint: "ready to close" },
+    { label: "Won", value: data.stats.won, hint: `avg score ${data.stats.avgScore}` },
   ];
 
-  const today = new Date().toLocaleDateString("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-
   return (
-    <div className="mx-auto max-w-5xl space-y-14">
-      <header className="flex flex-col gap-6 border-b border-[var(--line)] pb-10 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-xl">
-          <p className="kicker">{today}</p>
-          <h1 className="display mt-4 text-5xl md:text-6xl">
-            El estudio,
-            <br />
-            en orden.
-          </h1>
-          <p className="mt-5 max-w-md text-[var(--muted)]">
-            La prospección abre puertas. Lo comercial califica. Tú cierras y
-            construyes.
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="display text-2xl">Dashboard</h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Prospecting finds companies. Sales qualifies. You build the website.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/leads" className="btn btn-primary">
-            Cartera
+        <div className="flex gap-2">
+          <Link href="/campaigns" className="btn btn-ghost">
+            Find leads
           </Link>
-          <Link href="/approvals" className="btn btn-ghost">
-            Firmar
+          <Link href="/approvals" className="btn btn-primary">
+            Review emails
           </Link>
         </div>
-      </header>
+      </div>
 
       {data.config.memoryMode && (
-        <p className="border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--muted)]">
-          Sesión local. Los datos no persisten hasta conectar la base.
+        <p className="panel px-4 py-3 text-sm text-[var(--muted)]">
+          Local memory mode — data won’t persist until the database is connected.
         </p>
       )}
 
-      <section className="grid grid-cols-2 gap-0 border-t border-b border-[var(--line)] md:grid-cols-4">
-        {figures.map((f, i) => (
-          <div
-            key={f.label}
-            className={`px-0 py-8 md:px-6 ${i !== 0 ? "md:border-l md:border-[var(--line)]" : ""} ${i % 2 === 1 ? "border-l border-[var(--line)] md:border-l" : ""}`}
-          >
-            <p className="kicker">{f.label}</p>
-            <p className="display mt-3 text-5xl">{f.value}</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{f.note}</p>
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map((c) => (
+          <div key={c.label} className="panel p-4">
+            <p className="text-sm text-[var(--muted)]">{c.label}</p>
+            <p className="mt-2 text-3xl font-semibold tracking-tight">{c.value}</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">{c.hint}</p>
           </div>
         ))}
       </section>
 
-      <section className="grid gap-16 lg:grid-cols-[1.1fr_0.9fr]">
-        <div>
-          <p className="kicker">Libro del día</p>
-          <h2 className="display mt-3 text-3xl">Movimientos</h2>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="panel p-5">
+          <h2 className="text-sm font-medium">Activity</h2>
           {data.events.length === 0 ? (
-            <p className="mt-6 text-[var(--muted)]">
-              Aún no hay actividad. Abre una ficha o lanza una prospección.
+            <p className="mt-3 text-sm text-[var(--muted)]">
+              No events yet. Import a CSV or search a city.
             </p>
           ) : (
-            <ol className="mt-8 divide-y divide-[var(--line)] border-t border-b border-[var(--line)]">
+            <ul className="mt-3 divide-y divide-[var(--line)]">
               {data.events.slice(0, 8).map((e) => (
-                <li
-                  key={e.id}
-                  className="flex items-baseline justify-between gap-6 py-4 text-sm"
-                >
+                <li key={e.id} className="flex justify-between gap-3 py-2.5 text-sm">
                   <span>
-                    <span className="text-[var(--muted)]">{agentLabel(e.agent)}</span>
-                    <span className="mx-2 text-[var(--line)]">/</span>
-                    {eventLabel(e.event_type)}
+                    <span className="text-[var(--muted)]">{e.agent}</span>
+                    {" · "}
+                    {EVENT_COPY[e.event_type] || e.event_type}
                   </span>
-                  <time className="shrink-0 text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
-                    {new Date(e.created_at).toLocaleString("es-ES", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </time>
+                  <span className="shrink-0 text-xs text-[var(--muted)]">
+                    {new Date(e.created_at).toLocaleString()}
+                  </span>
                 </li>
               ))}
-            </ol>
+            </ul>
           )}
         </div>
 
-        <div>
-          <p className="kicker">Casa</p>
-          <h2 className="display mt-3 text-3xl">Sistemas</h2>
-          <dl className="mt-8 space-y-5 text-sm">
-            <div className="flex justify-between border-b border-[var(--line)] pb-3">
-              <dt className="text-[var(--muted)]">Archivo</dt>
-              <dd>{data.config.backend}</dd>
-            </div>
-            <div className="flex justify-between border-b border-[var(--line)] pb-3">
-              <dt className="text-[var(--muted)]">Correo</dt>
-              <dd>
-                {data.config.resend
-                  ? "Resend"
-                  : data.config.smtp
-                    ? "SMTP"
-                    : "En espera"}
-              </dd>
-            </div>
-            <div className="flex justify-between border-b border-[var(--line)] pb-3">
-              <dt className="text-[var(--muted)]">Redacción</dt>
-              <dd>{data.config.llm ? "Asistida" : "Plantilla"}</dd>
-            </div>
-          </dl>
-          <Link
-            href="/campaigns"
-            className="mt-8 inline-block border-b border-[var(--ink)] pb-0.5 text-sm"
-          >
-            Abrir prospección
+        <div className="panel p-5">
+          <h2 className="text-sm font-medium">Systems</h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            <li className="flex justify-between">
+              <span className="text-[var(--muted)]">Database</span>
+              <span>{data.config.backend}</span>
+            </li>
+            <li className="flex justify-between">
+              <span className="text-[var(--muted)]">Email</span>
+              <span>
+                {data.config.resend ? "Resend" : data.config.smtp ? "SMTP" : "Off"}
+              </span>
+            </li>
+            <li className="flex justify-between">
+              <span className="text-[var(--muted)]">LLM</span>
+              <span>{data.config.llm ? "OpenAI" : "Templates"}</span>
+            </li>
+          </ul>
+          <Link href="/leads" className="btn btn-ghost mt-5">
+            Open leads
           </Link>
         </div>
       </section>

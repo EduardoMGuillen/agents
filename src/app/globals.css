@@ -1,23 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f6f4ef;
-  --paper: #fbfaf7;
-  --ink: #1a1916;
-  --muted: #6f6b64;
-  --line: #e4e0d6;
-  --line-strong: #1a1916;
-  --accent: #1a1916;
-  --ok: #2c4a3e;
-  --warn: #6b5344;
-  --danger: #7a2e24;
+  --bg: #f8fafc;
+  --paper: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --accent: #2563eb;
+  --ok: #047857;
+  --warn: #b45309;
+  --danger: #dc2626;
 }
 
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--ink);
   --font-sans: var(--font-sans-body);
-  --font-display: var(--font-serif);
 }
 
 * {
@@ -33,9 +31,9 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-sans-body), "Segoe UI", sans-serif;
-  font-size: 15px;
-  line-height: 1.55;
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 a {
@@ -51,125 +49,115 @@ textarea {
 }
 
 .display {
-  font-family: var(--font-serif), "Times New Roman", serif;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.03em;
-  line-height: 1.1;
+  line-height: 1.2;
 }
 
 .kicker {
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--muted);
 }
 
 .panel {
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 0;
+  border-radius: 10px;
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  border-radius: 0;
-  border: 1px solid var(--line-strong);
-  padding: 0.7rem 1.15rem;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  gap: 0.4rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.5rem 0.9rem;
+  font-size: 13px;
+  font-weight: 550;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: 0.12s ease;
 }
 
 .btn:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .btn-primary {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--accent);
+  color: #fff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #000;
+  background: #1d4ed8;
 }
 
 .btn-ghost {
-  background: transparent;
+  background: var(--paper);
+  border-color: var(--line);
   color: var(--ink);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--ink);
-  color: var(--paper);
+  background: #f1f5f9;
 }
 
 .btn-danger {
-  background: transparent;
-  border-color: var(--danger);
+  background: #fff;
+  border-color: #fecaca;
   color: var(--danger);
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: var(--danger);
-  color: var(--paper);
 }
 
 .field {
   width: 100%;
   background: #fff;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  padding: 0.7rem 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
   color: var(--ink);
 }
 
 .field:focus {
-  outline: none;
-  border-bottom-color: var(--ink);
+  outline: 2px solid #bfdbfe;
+  border-color: var(--accent);
 }
 
 .label {
   display: block;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--muted);
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.3rem;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
-  border-radius: 0;
+  border-radius: 6px;
   padding: 0.12rem 0.45rem;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
   border: 1px solid var(--line);
-  background: transparent;
+  background: #f8fafc;
   color: var(--muted);
 }
 
 .badge-ok {
-  border-color: var(--ok);
+  border-color: #a7f3d0;
+  background: #ecfdf5;
   color: var(--ok);
 }
 
 .badge-warn {
-  border-color: var(--warn);
+  border-color: #fde68a;
+  background: #fffbeb;
   color: var(--warn);
 }
 
 .badge-accent {
-  border-color: var(--ink);
-  color: var(--ink);
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: var(--accent);
 }

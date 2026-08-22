@@ -51,7 +51,7 @@ export default function ApprovalsPage() {
     <div className="space-y-5">
       <div>
         <h1
-          className="display text-4xl"
+          className="display text-2xl"
         >
           Approvals
         </h1>

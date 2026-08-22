@@ -100,8 +100,8 @@ export default function CampaignsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-14">
       <header className="border-b border-[var(--line)] pb-8">
-        <p className="kicker">04 — Prospección</p>
-        <h1 className="display mt-3 text-5xl">Encontrar casas</h1>
+        <p className="text-sm text-[var(--muted)]">Prospecting</p>
+        <h1 className="display text-2xl">Prospecting</h1>
         <p className="mt-4 max-w-xl text-[var(--muted)]">
           Tres vías: directorio público de la ciudad, un CSV de empresas, o una
           lista ilustrativa. Luego, en Cartera, se redacta la oferta de web.
@@ -111,7 +111,7 @@ export default function CampaignsPage() {
       <section className="grid gap-12 lg:grid-cols-2">
         <form onSubmit={onPlaces} className="space-y-5">
           <p className="kicker">Directorio</p>
-          <h2 className="display text-3xl">Buscar en la ciudad</h2>
+          <h2 className="display text-xl">Buscar en la ciudad</h2>
           <p className="text-sm text-[var(--muted)]">
             OpenStreetMap: restaurantes, clínicas, talleres, hoteles… Prioriza
             quienes no tienen web. El email hay que completarlo si no viene.
@@ -146,7 +146,7 @@ export default function CampaignsPage() {
 
         <form onSubmit={onCsv} className="space-y-5">
           <p className="kicker">Archivo</p>
-          <h2 className="display text-3xl">CSV de empresas</h2>
+          <h2 className="display text-xl">CSV de empresas</h2>
           <p className="text-sm text-[var(--muted)]">
             Columnas: company o empresa, email, phone, website, city, niche.
             También puedes pegar la URL de un CSV público.
@@ -176,7 +176,7 @@ export default function CampaignsPage() {
 
       <form onSubmit={onInvent} className="border-t border-[var(--line)] pt-12 space-y-5 max-w-xl">
         <p className="kicker">Lista ilustrativa</p>
-        <h2 className="display text-3xl">Nombres de prueba</h2>
+        <h2 className="display text-xl">Nombres de prueba</h2>
         <p className="text-sm text-[var(--muted)]">
           No son empresas reales. Úsalo solo para ensayar el tono de la oferta.
         </p>
