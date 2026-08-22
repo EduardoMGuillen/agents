@@ -12,6 +12,7 @@ export default function SettingsPage() {
     smtp: boolean;
     mail: boolean;
     llm: boolean;
+    googlePlaces: boolean;
     site: string;
   } | null>(null);
   const [secrets, setSecrets] = useState<{ hasPassword: boolean } | null>(null);
@@ -58,6 +59,10 @@ export default function SettingsPage() {
             <li>SMTP: {config.smtp ? "✅" : "—"}</li>
             <li>Resend: {config.resend ? "✅" : "— (usando SMTP)"}</li>
             <li>OpenAI: {config.llm ? "✅" : "— (plantillas fallback)"}</li>
+            <li>
+              Google Maps:{" "}
+              {config.googlePlaces ? "✅" : "— (falta GOOGLE_MAPS_API_KEY)"}
+            </li>
             <li>
               Site:{" "}
               <a

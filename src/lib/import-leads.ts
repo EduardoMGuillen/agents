@@ -1,9 +1,13 @@
 import { store } from "@/lib/store";
 import type { CsvLeadRow } from "@/lib/csv";
 import type { Lead, LeadSource } from "@/lib/types";
+import { localeFromCountry, normalizeCountry } from "@/lib/locale";
+import { scoreImportedLead } from "@/lib/score";
 
-function keyOf(company: string, city: string | null) {
-  return `${company.trim().toLowerCase()}|${(city || "").trim().toLowerCase()}`;
+function validEmail(value: string | null | undefined) {
+  const email = value?.trim().toLowerCase() ?? "";
+  if (email.includes("protected") || email.includes("[email")) return null;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
 }
 
 export async function importLeadRows(
@@ -17,54 +21,63 @@ export async function importLeadRows(
       .map((l) => l.email?.toLowerCase())
       .filter((e): e is string => Boolean(e)),
   );
-  const byCompany = new Set(
-    existing.map((l) => keyOf(l.company || "", l.city)),
-  );
 
   const created: Lead[] = [];
   let skipped = 0;
 
   for (const row of rows) {
-    const email = row.email?.toLowerCase() || null;
-    if (email && byEmail.has(email)) {
+    const email = validEmail(row.email);
+    if (!email) {
       skipped += 1;
       continue;
     }
-    const ck = keyOf(row.company || "", row.city);
-    if (byCompany.has(ck)) {
+    if (byEmail.has(email)) {
       skipped += 1;
       continue;
     }
 
+    const country = normalizeCountry(row.country || "HN");
+    const locale = localeFromCountry(country);
+
     const lead = await store.createLead({
       name: row.name,
-      email: row.email,
+      email,
       phone: row.phone,
       company: row.company,
       website: row.website,
       city: row.city,
-      country: row.country || "MX",
-      locale: row.locale || "es",
+      country,
+      locale,
       niche: row.niche,
       notes: row.notes,
       source,
       status: "new",
-      score: row.email ? 55 : row.website ? 45 : 70,
+      score: scoreImportedLead({
+        email,
+        website: row.website,
+        phone: row.phone,
+        niche: row.niche,
+        company: row.company,
+      }),
     });
 
     created.push(lead);
-    if (email) byEmail.add(email);
-    byCompany.add(ck);
+    byEmail.add(email);
   }
 
+  if (created.length === 0) {
+    return { campaign: null, leads: created, skipped };
+  }
+
+  const country = normalizeCountry(rows[0]?.country || "HN");
   const campaign = await store.createCampaign({
     name: campaignNote,
     niche: rows[0]?.niche ?? null,
     city: rows[0]?.city ?? null,
-    country: rows[0]?.country || "MX",
-    locale: rows[0]?.locale || "es",
+    country,
+    locale: localeFromCountry(country),
     status: "active",
-    notes: `${created.length} altas, ${skipped} omitidas (duplicado)`,
+    notes: `${created.length} altas, ${skipped} omitidas (sin email o duplicado)`,
   });
 
   await store.createEvent({

@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { searchPlaces } from "@/lib/places";
+import { searchContactablePlaces } from "@/lib/places";
 import { importLeadRows } from "@/lib/import-leads";
+import { localeFromCountry, normalizeCountry } from "@/lib/locale";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const schema = z.object({
   niche: z.string().min(2),
   city: z.string().min(2),
   country: z.string().optional(),
-  locale: z.enum(["es", "en"]).optional(),
-  limit: z.number().min(5).max(40).optional(),
+  limit: z.number().min(5).max(20).optional(),
 });
 
 export async function POST(req: Request) {
@@ -19,40 +22,59 @@ export async function POST(req: Request) {
   }
 
   try {
-    const places = await searchPlaces({
+    const country = normalizeCountry(parsed.data.country || "HN");
+    const locale = localeFromCountry(country);
+    const found = await searchContactablePlaces({
       niche: parsed.data.niche,
       city: parsed.data.city,
-      country: parsed.data.country,
-      limit: parsed.data.limit ?? 25,
+      country,
+      locale,
+      limit: parsed.data.limit ?? 12,
     });
 
-    if (places.length === 0) {
+    if (found.scanned === 0) {
       return NextResponse.json(
-        { error: "No encontré negocios públicos en esa zona. Prueba otro nicho o ciudad." },
+        { error: "No encontré negocios en Google Maps para esa zona." },
         { status: 404 },
       );
     }
 
-    const locale = parsed.data.locale ?? "es";
+    if (found.withEmail.length === 0) {
+      return NextResponse.json(
+        {
+          error: `Revisé ${found.scanned} negocios (${found.withWebsite} con web) y no hallé correo público. Prueba otro nicho o un CSV.`,
+          found: found.scanned,
+          withWebsite: found.withWebsite,
+          withEmail: 0,
+        },
+        { status: 422 },
+      );
+    }
+
     const result = await importLeadRows(
-      places.map((p) => ({
+      found.withEmail.map((p) => ({
         name: null,
         email: p.email,
         phone: p.phone,
         company: p.company,
         website: p.website,
         city: p.city,
-        country: parsed.data.country || "MX",
+        country,
         locale,
         niche: parsed.data.niche,
         notes: p.notes,
       })),
       "marketing_agent",
-      `Directorio ${parsed.data.niche} · ${parsed.data.city}`,
+      `Maps ${parsed.data.niche} · ${parsed.data.city}`,
     );
 
     return NextResponse.json(
-      { ...result, found: places.length },
+      {
+        ...result,
+        found: found.scanned,
+        withWebsite: found.withWebsite,
+        withEmail: found.withEmail.length,
+      },
       { status: 201 },
     );
   } catch (e) {

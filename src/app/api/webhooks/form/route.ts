@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { store } from "@/lib/store";
-import { draftSalesOutreach } from "@/lib/agents/sales";
+import { localeFromCountry, normalizeCountry } from "@/lib/locale";
 
 const schema = z.object({
   name: z.string().optional(),
@@ -58,14 +58,15 @@ export async function POST(req: Request) {
   }
 
   const data = parsed.data;
+  const country = normalizeCountry(data.country || "MX");
   const lead = await store.createLead({
     name: data.name ?? null,
     email: data.email,
     phone: data.phone ?? null,
     company: data.company ?? null,
     city: data.city ?? null,
-    country: data.country ?? "MX",
-    locale: data.locale ?? "es",
+    country,
+    locale: localeFromCountry(country),
     source: "website_form",
     status: "new",
     score: 50,

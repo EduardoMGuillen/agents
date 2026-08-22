@@ -1,12 +1,14 @@
 import type { Lead } from "@/lib/types";
+import { countryName } from "@/lib/locale";
 
 export const NEXUS_SITE = "https://www.nexusglobalsuministros.com/";
 
 export const SALES_SYSTEM_ES = `Eres el Sales Agent de Nexus Global (nexusglobalsuministros.com).
-Nexus vende páginas web, e-commerce, dashboards y plataformas digitales a negocios locales e internacionales.
+Nexus vende páginas web a negocios locales pequeños y medianos (no cadenas ni corporativos).
 El desarrollador humano (Eduardo) construye los sitios; tú calificas y calientas leads.
 Reglas:
 - Habla en español profesional, cercano y concreto.
+- Tono para dueño de negocio local, no para enterprise.
 - No inventes precios fijos; menciona que Eduardo cotiza según alcance.
 - Incluye siempre el link ${NEXUS_SITE} cuando invites a ver trabajo/proceso.
 - Sé transparente: eres el asistente de ventas de Nexus.
@@ -15,10 +17,11 @@ Reglas:
 - Responde SOLO JSON válido.`;
 
 export const SALES_SYSTEM_EN = `You are the Sales Agent for Nexus Global (nexusglobalsuministros.com).
-Nexus builds websites, e-commerce, dashboards and custom digital platforms for local and international businesses.
+Nexus builds websites for small and mid-size local businesses (not big chains or corporates).
 A human developer (Eduardo) builds the sites; you qualify and warm leads.
 Rules:
 - Professional, concise English.
+- Tone for a local owner, not enterprise procurement.
 - Do not invent fixed prices; Eduardo quotes by scope.
 - Include ${NEXUS_SITE} when inviting them to see work/process.
 - Be transparent: you are Nexus sales assistant.
@@ -26,54 +29,88 @@ Rules:
 - If they want a serious call/quote, set readyForHandoff=true.
 - Respond ONLY with valid JSON.`;
 
+function angleEs(lead: Lead, company: string, where: string) {
+  const niche = (lead.niche || "").toLowerCase();
+  const hasWeb = Boolean(lead.website);
+  if (/restaurant|comida|bistro|cafe|bar|pinata|fiesta/.test(niche)) {
+    return hasWeb
+      ? `Hoy mucha gente busca dónde comer o encargar antes de salir. Si la web de ${company} no se ve clara en el celular, se van con el de al lado.`
+      : `Hoy la gente busca en Google o WhatsApp dónde comer o encargar. Si ${company} no aparece bien, se van con el de al lado.`;
+  }
+  if (/belleza|salon|estetica/.test(niche)) {
+    return `En belleza la primera impresión es la foto y lo fácil que sea agendar. Una web simple ayuda a que ${company} se vea tan profesional como el servicio.`;
+  }
+  if (/salud|clinic|dental|oftal|rehabil/.test(niche)) {
+    return `Quien busca un consultorio quiere confianza: ubicación, servicios y cómo contactarlos. Eso se resuelve con una web clara.`;
+  }
+  if (/auto|taller|bateria|repara/.test(niche)) {
+    return `Cuando el carro falla, buscan el taller más cercano que inspire confianza. ${company} gana si aparece con teléfono, horario y lo que reparan.`;
+  }
+  if (/ropa|calzado|tienda|comercio|abarro/.test(niche)) {
+    return `Aunque vendan en local, muchos clientes los buscan en internet antes de ir. Una vitrina de ${company} ayuda a no perderse frente al que sí se ve online.`;
+  }
+  if (/legal|abogad|profesional|contab/.test(niche)) {
+    return `En servicios profesionales la web es la tarjeta de presentación: quiénes son, qué atienden y cómo escribirles.`;
+  }
+  if (/educa|escuela|academia/.test(niche)) {
+    return `Los papás comparan escuelas y academias en el teléfono. ${company} se ve más serio con una página de programas, ubicación y contacto.`;
+  }
+  return hasWeb
+    ? `Revisé ${company}${where ? ` en ${where}` : ""} y vi que ya tienen presencia online. A veces con un ajuste se entiende mejor lo que hacen.`
+    : `Revisé ${company}${where ? ` en ${where}` : ""}. Negocios como el suyo suelen perder clientes solo porque no se encuentran fácil en internet.`;
+}
+
 export function salesDraftFallback(lead: Lead) {
-  const name = lead.name?.split(" ")[0] || (lead.locale === "en" ? "there" : "hola");
+  const company = lead.company || "tu negocio";
+  const where = [lead.city, countryName(lead.country)].filter(Boolean).join(", ");
+
   if (lead.locale === "en") {
+    const place = where ? ` in ${where}` : "";
     return {
-      subject: `${lead.company || "Your business"} — a website that actually brings clients`,
-      body: `Hi ${name},
+      subject: `${company} — a simple website that brings you clients`,
+      body: `Hi,
 
-I'm the sales assistant at Nexus Global. We help businesses get professional websites and digital platforms that convert visitors into clients.
+I'm Eduardo, from Nexus Global. We build websites for small and mid-size local businesses.
 
-I noticed ${lead.company || "your business"}${lead.city ? ` in ${lead.city}` : ""}${lead.website ? ` (${lead.website})` : ""} and wanted to ask: are you looking to launch or improve your online presence?
+I came across ${company}${place}${lead.niche ? ` (${lead.niche})` : ""}. ${
+        lead.website
+          ? `You already have a site; it may just need to be clearer so people can contact you without hunting.`
+          : `A lot of nearby customers search on their phone first. If they can't find you, they call someone else.`
+      }
 
-You can see our work and process here: ${NEXUS_SITE}
+If it's useful, I can send a short idea of what your site could look like — no price until we know the scope.
 
-If useful, reply with:
-1) What you need (landing, business site, store, custom)
-2) Ideal timeline
-3) Rough budget range
+A bit of our work: ${NEXUS_SITE}
 
-Happy to connect you with Eduardo for a short call.
+If you'd rather not hear from me, say so and I won't write again.
 
-— Nexus Sales`,
-      score: 35,
+Eduardo
+Nexus Global`,
+      score: 0,
       readyForHandoff: false,
-      qualificationNotes: "Fallback draft without LLM",
+      qualificationNotes: "Primer contacto natural (EN)",
     };
   }
 
   return {
-    subject: `${lead.company || "Tu negocio"} — una web que sí traiga clientes`,
-    body: `Hola ${name},
+    subject: `${company}: una web sencilla para que te encuentren`,
+    body: `Hola,
 
-Soy el asistente de ventas de Nexus Global. Ayudamos a negocios a tener páginas web y plataformas digitales profesionales que conviertan visitas en clientes.
+Soy Eduardo, de Nexus Global. Hacemos páginas web para negocios locales, sin paquetes inflados.
 
-Vi ${lead.company || "tu negocio"}${lead.city ? ` en ${lead.city}` : ""}${lead.website ? ` (${lead.website})` : ""} y quería preguntarte: ¿estás buscando lanzar o mejorar tu presencia online?
+${angleEs(lead, company, where)}
 
-Puedes ver nuestro trabajo y proceso aquí: ${NEXUS_SITE}
+Si te interesa, te mando una idea corta de cómo se vería el sitio de ${company}. El precio lo vemos después, según lo que necesites.
 
-Si te interesa, responde con:
-1) Qué necesitas (landing, web de negocio, tienda, a medida)
-2) Plazo ideal
-3) Rango aproximado de presupuesto
+Un poco de lo que hacemos: ${NEXUS_SITE}
 
-Con gusto te conecto con Eduardo para una llamada corta.
+Si no aplica, dime y no te vuelvo a escribir.
 
-— Nexus Sales`,
-    score: 35,
+Eduardo
+Nexus Global`,
+    score: 0,
     readyForHandoff: false,
-    qualificationNotes: "Borrador fallback sin LLM",
+    qualificationNotes: "Primer contacto natural (ES)",
   };
 }
 
@@ -128,9 +165,3 @@ ${wantsCall ? "Voy a avisar a Eduardo para que agende una llamada contigo." : "C
       : "Seguir calificando",
   };
 }
-
-export const MARKETING_SYSTEM = `Eres el Marketing Agent de Nexus Global.
-Generas leads prospecto (negocio local/internacional) para vender websites.
-Devuelves JSON con un array "leads" (máx 8) con: name, email (puede ser null si desconocido), phone (null ok), company, website (null ok), city, country, locale ("es"|"en"), niche, notes (por qué es buen lead), score (0-100).
-No inventes emails reales de personas; si no sabes el email pon null y sugiere canal.
-Enfócate en negocios que suelen necesitar web: clínicas, restaurantes, talleres, despachos, tiendas, servicios locales.`;

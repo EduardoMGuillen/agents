@@ -3,12 +3,34 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Lead, LeadStatus } from "@/lib/types";
-import { LEAD_STATUSES } from "@/lib/types";
+import { LEAD_STATUSES, STATUS_LABELS } from "@/lib/types";
 import { ScorePill, StatusBadge } from "@/components/status-badge";
+
+type ReplyFilter = "" | "not_sent" | "waiting" | "replied";
+
+function replyState(lead: Lead): Exclude<ReplyFilter, ""> {
+  if (
+    lead.status === "replied" ||
+    lead.status === "qualified" ||
+    lead.status === "handed_off" ||
+    lead.status === "won"
+  ) {
+    return "replied";
+  }
+  if (lead.status === "contacted") return "waiting";
+  return "not_sent";
+}
+
+const REPLY_LABEL: Record<Exclude<ReplyFilter, "">, string> = {
+  not_sent: "Sin enviar",
+  waiting: "Sin respuesta",
+  replied: "Contestó",
+};
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [status, setStatus] = useState<LeadStatus | "">("");
+  const [replyFilter, setReplyFilter] = useState<ReplyFilter>("");
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -33,7 +55,7 @@ export default function LeadsPage() {
     const fd = new FormData(e.currentTarget);
     const payload = {
       name: String(fd.get("name") || "") || null,
-      email: String(fd.get("email") || "") || null,
+      email: String(fd.get("email") || ""),
       phone: String(fd.get("phone") || "") || null,
       company: String(fd.get("company") || "") || null,
       website: String(fd.get("website") || "") || null,
@@ -64,12 +86,54 @@ export default function LeadsPage() {
             Leads
           </h1>
           <p className="text-sm text-[var(--muted)]">
-            Pipeline CRM — Sales Agent califica, tú cierras.
+          Pipeline: quién contestó, quién sigue en silencio y a quién aún no
+          les escribes.
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "Cerrar" : "Nuevo lead"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="btn btn-ghost"
+            disabled={saving}
+            onClick={async () => {
+              if (!confirm("¿Generar un mail de oferta para cada empresa (sin enviar)?")) {
+                return;
+              }
+              setSaving(true);
+              const res = await fetch("/api/leads/draft-all", { method: "POST" });
+              const json = await res.json();
+              setSaving(false);
+              alert(
+                res.ok
+                  ? `${json.created} borradores listos en Approvals (${json.skipped} omitidos).`
+                  : json.error || "Error",
+              );
+            }}
+          >
+            {saving ? "Generando…" : "Generar mails"}
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
+            {showForm ? "Cerrar" : "Nuevo lead"}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ["", "Todos"],
+            ["not_sent", "Sin enviar"],
+            ["waiting", "Sin respuesta"],
+            ["replied", "Contestaron"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key || "all-reply"}
+            className={`btn ${replyFilter === key ? "btn-primary" : "btn-ghost"}`}
+            onClick={() => setReplyFilter(key)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -91,7 +155,7 @@ export default function LeadsPage() {
               load(s);
             }}
           >
-            {s}
+            {STATUS_LABELS[s]}
           </button>
         ))}
       </div>
@@ -104,7 +168,7 @@ export default function LeadsPage() {
           </div>
           <div>
             <label className="label">Email</label>
-            <input name="email" type="email" className="field" />
+            <input name="email" type="email" className="field" required />
           </div>
           <div>
             <label className="label">Empresa</label>
@@ -152,9 +216,10 @@ export default function LeadsPage() {
       <div className="panel overflow-hidden">
         {loading ? (
           <p className="p-4 text-[var(--muted)]">Cargando…</p>
-        ) : leads.length === 0 ? (
+        ) : leads.filter((l) => !replyFilter || replyState(l) === replyFilter)
+            .length === 0 ? (
           <p className="p-4 text-[var(--muted)]">
-            No hay leads. Crea uno manual o genera prospectos en Marketing.
+            No hay leads. Crea uno manual o genera prospectos en Prospecting.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -162,6 +227,7 @@ export default function LeadsPage() {
               <thead className="border-b border-[var(--line)] text-[var(--muted)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Empresa / Lead</th>
+                  <th className="px-4 py-3 font-medium">Respuesta</th>
                   <th className="px-4 py-3 font-medium">Estado</th>
                   <th className="px-4 py-3 font-medium">Score</th>
                   <th className="px-4 py-3 font-medium">Fuente</th>
@@ -169,7 +235,9 @@ export default function LeadsPage() {
                 </tr>
               </thead>
               <tbody>
-                {leads.map((lead) => (
+                {leads
+                  .filter((l) => !replyFilter || replyState(l) === replyFilter)
+                  .map((lead) => (
                   <tr
                     key={lead.id}
                     className="border-b border-[var(--line)]/70 hover:bg-[var(--bg-soft)]/50"
@@ -181,6 +249,9 @@ export default function LeadsPage() {
                       <div className="text-xs text-[var(--muted)]">
                         {lead.email || "sin email"} · {lead.locale.toUpperCase()}
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="badge">{REPLY_LABEL[replyState(lead)]}</span>
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={lead.status} />

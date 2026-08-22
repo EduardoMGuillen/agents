@@ -28,6 +28,7 @@ type DashboardData = {
     smtp: boolean;
     mail: boolean;
     llm: boolean;
+    googlePlaces?: boolean;
     site: string;
   };
 };

@@ -39,6 +39,7 @@ function normHeader(h: string) {
 const HEADER_MAP: Record<string, string> = {
   company: "company",
   empresa: "company",
+  nombreempresa: "company",
   negocio: "company",
   business: "company",
   name: "name",
@@ -67,6 +68,7 @@ const HEADER_MAP: Record<string, string> = {
   niche: "niche",
   nicho: "niche",
   rubro: "niche",
+  sector: "niche",
   notes: "notes",
   notas: "notes",
 };

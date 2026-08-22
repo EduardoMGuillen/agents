@@ -62,14 +62,7 @@ export async function draftSalesOutreach(leadId: string) {
   if (!lead) throw new Error("Lead no encontrado");
   if (!lead.email) throw new Error("El lead no tiene email");
 
-  let draft: SalesDraftResult;
-  try {
-    draft = isLlmConfigured()
-      ? await generateWithLlm(lead, "first_touch")
-      : salesDraftFallback(lead);
-  } catch {
-    draft = salesDraftFallback(lead);
-  }
+  const draft = salesDraftFallback(lead);
 
   const approval = await store.createApproval({
     lead_id: lead.id,
@@ -98,6 +91,25 @@ export async function draftSalesOutreach(leadId: string) {
   });
 
   return { lead, approval, draft };
+}
+
+export async function draftAllFirstTouch() {
+  const leads = await store.listLeads();
+  const pending = await store.listApprovals("pending");
+  const hasPending = new Set(pending.map((a) => a.lead_id));
+  let created = 0;
+  let skipped = 0;
+
+  for (const lead of leads) {
+    if (!lead.email || hasPending.has(lead.id)) {
+      skipped += 1;
+      continue;
+    }
+    await draftSalesOutreach(lead.id);
+    created += 1;
+  }
+
+  return { created, skipped, total: leads.length };
 }
 
 export async function draftSalesReply(

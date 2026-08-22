@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { store } from "@/lib/store";
 import { isLlmConfigured } from "@/lib/llm";
+import { isGooglePlacesConfigured } from "@/lib/places";
 import { isMailConfigured, isResendConfigured, isSmtpConfigured } from "@/lib/mail";
 import { isSupabaseConfigured } from "@/lib/supabase/admin";
 import { isPostgresConfigured } from "@/lib/db/pg";
@@ -25,6 +26,7 @@ export async function GET() {
       smtp: isSmtpConfigured(),
       mail: isMailConfigured(),
       llm: isLlmConfigured(),
+      googlePlaces: isGooglePlacesConfigured(),
       site:
         process.env.NEXT_PUBLIC_NEXUS_SITE ??
         "https://www.nexusglobalsuministros.com/",

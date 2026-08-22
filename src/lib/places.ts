@@ -1,4 +1,8 @@
-type Place = {
+import { enrichPlacesWithEmails } from "@/lib/enrich-email";
+import { isLikelyChain } from "@/lib/chains";
+import { localeFromCountry, normalizeCountry } from "@/lib/locale";
+
+export type Place = {
   company: string;
   website: string | null;
   email: string | null;
@@ -8,141 +12,254 @@ type Place = {
   score: number;
 };
 
-const NICHE_FILTERS: Record<string, string[]> = {
-  restaurante: [
-    'nwr["amenity"="restaurant"]',
-    'nwr["amenity"="cafe"]',
-    'nwr["amenity"="fast_food"]',
-  ],
-  restaurant: [
-    'nwr["amenity"="restaurant"]',
-    'nwr["amenity"="cafe"]',
-  ],
-  clinica: [
-    'nwr["amenity"="clinic"]',
-    'nwr["amenity"="doctors"]',
-    'nwr["amenity"="hospital"]',
-  ],
-  dental: ['nwr["amenity"="dentist"]'],
-  dentist: ['nwr["amenity"="dentist"]'],
-  hotel: ['nwr["tourism"="hotel"]'],
-  salon: ['nwr["shop"="hairdresser"]', 'nwr["shop"="beauty"]'],
-  taller: ['nwr["shop"="car_repair"]', 'nwr["craft"="carpenter"]'],
-  tienda: ['nwr["shop"]'],
-  shop: ['nwr["shop"]'],
-  gym: ['nwr["leisure"="fitness_centre"]'],
-  abogado: ['nwr["office"="lawyer"]'],
-  lawyer: ['nwr["office"="lawyer"]'],
+type GooglePlace = {
+  displayName?: { text?: string };
+  formattedAddress?: string;
+  nationalPhoneNumber?: string;
+  internationalPhoneNumber?: string;
+  websiteUri?: string;
+  googleMapsUri?: string;
+  businessStatus?: string;
+  rating?: number;
+  userRatingCount?: number;
 };
 
-function filtersForNiche(niche: string): string[] {
+type TextSearchResponse = {
+  places?: GooglePlace[];
+  nextPageToken?: string;
+  error?: { message?: string; status?: string };
+};
+
+const COUNTRY_NAMES: Record<string, string> = {
+  HN: "Honduras",
+  MX: "Mexico",
+  GT: "Guatemala",
+  SV: "El Salvador",
+  NI: "Nicaragua",
+  CR: "Costa Rica",
+  PA: "Panama",
+  US: "United States",
+  CA: "Canada",
+  GB: "United Kingdom",
+  ES: "Spain",
+  FR: "France",
+  DE: "Germany",
+  IT: "Italy",
+  PT: "Portugal",
+  BR: "Brazil",
+  CO: "Colombia",
+  AR: "Argentina",
+  CL: "Chile",
+  PE: "Peru",
+  EC: "Ecuador",
+  BO: "Bolivia",
+  PY: "Paraguay",
+  UY: "Uruguay",
+  VE: "Venezuela",
+  DO: "Dominican Republic",
+  CU: "Cuba",
+  PR: "Puerto Rico",
+  JP: "Japan",
+  KR: "South Korea",
+  CN: "China",
+  IN: "India",
+  AU: "Australia",
+  NZ: "New Zealand",
+  AE: "United Arab Emirates",
+  ZA: "South Africa",
+  NG: "Nigeria",
+  KE: "Kenya",
+  PH: "Philippines",
+  SG: "Singapore",
+  NL: "Netherlands",
+  BE: "Belgium",
+  CH: "Switzerland",
+  AT: "Austria",
+  IE: "Ireland",
+  SE: "Sweden",
+  NO: "Norway",
+  DK: "Denmark",
+  PL: "Poland",
+};
+
+const PLACE_TYPES: Array<{ match: string; type: string }> = [
+  { match: "restaurant", type: "restaurant" },
+  { match: "restaurante", type: "restaurant" },
+  { match: "cafe", type: "cafe" },
+  { match: "clinica", type: "doctor" },
+  { match: "clinic", type: "doctor" },
+  { match: "dental", type: "dentist" },
+  { match: "dentist", type: "dentist" },
+  { match: "hotel", type: "hotel" },
+  { match: "salon", type: "hair_salon" },
+  { match: "gym", type: "gym" },
+  { match: "abogado", type: "lawyer" },
+  { match: "lawyer", type: "lawyer" },
+  { match: "taller", type: "car_repair" },
+  { match: "tienda", type: "store" },
+  { match: "shop", type: "store" },
+];
+
+export function isGooglePlacesConfigured() {
+  return Boolean(process.env.GOOGLE_MAPS_API_KEY?.trim());
+}
+
+function countryLabel(code: string) {
+  const upper = code.trim().toUpperCase();
+  return COUNTRY_NAMES[upper] ?? code;
+}
+
+function includedTypeFor(niche: string) {
   const key = niche
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-  for (const [k, v] of Object.entries(NICHE_FILTERS)) {
-    if (key.includes(k)) return v;
-  }
-  return [
-    'nwr["amenity"="restaurant"]',
-    'nwr["shop"]',
-    'nwr["office"]',
-    'nwr["amenity"="clinic"]',
-  ];
+  return PLACE_TYPES.find((t) => key.includes(t.match))?.type;
 }
 
-async function geocodeCity(city: string, country: string) {
-  const q = encodeURIComponent(`${city}, ${country}`);
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`,
-    {
-      headers: {
-        "User-Agent": "NexusAtelier/1.0 (nexusglobalsuministros.com)",
-        Accept: "application/json",
-      },
+function toPlace(p: GooglePlace, city: string): Place | null {
+  const company = p.displayName?.text?.trim();
+  if (!company) return null;
+  if (p.businessStatus && p.businessStatus !== "OPERATIONAL") return null;
+
+  const website = p.websiteUri?.trim() || null;
+  const reviews = p.userRatingCount ?? 0;
+  if (isLikelyChain({ company, website, reviewCount: reviews })) return null;
+
+  const phone =
+    p.internationalPhoneNumber?.trim() || p.nationalPhoneNumber?.trim() || null;
+  const maps = p.googleMapsUri?.trim();
+  const address = p.formattedAddress?.trim();
+  const rating =
+    typeof p.rating === "number" ? `${p.rating}★ (${reviews} reseñas)` : null;
+
+  const notes = [
+    website
+      ? `Web en Google: ${website}. Evaluar rediseño.`
+      : "Sin web en Google Maps — candidato a web nueva.",
+    address ? `Dirección: ${address}` : null,
+    rating,
+    maps,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return {
+    company,
+    website,
+    email: null,
+    phone,
+    city,
+    notes,
+    score: website ? 48 : 72,
+  };
+}
+
+async function searchTextPage(
+  apiKey: string,
+  textQuery: string,
+  languageCode: string,
+  includedType: string | undefined,
+  pageToken?: string,
+): Promise<TextSearchResponse> {
+  const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask":
+        "places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.businessStatus,places.rating,places.userRatingCount,nextPageToken",
     },
-  );
-  if (!res.ok) throw new Error("No se pudo geocodificar la ciudad");
-  const data = (await res.json()) as Array<{ lat: string; lon: string }>;
-  if (!data[0]) throw new Error(`No encontré la ciudad ${city}`);
-  return { lat: Number(data[0].lat), lon: Number(data[0].lon) };
-}
+    body: JSON.stringify({
+      textQuery,
+      languageCode,
+      maxResultCount: 20,
+      ...(includedType ? { includedType } : {}),
+      ...(pageToken ? { pageToken } : {}),
+    }),
+  });
 
-function tag(tags: Record<string, string> | undefined, ...keys: string[]) {
-  if (!tags) return null;
-  for (const k of keys) {
-    if (tags[k]) return tags[k];
+  const json = (await res.json()) as TextSearchResponse;
+  if (!res.ok) {
+    throw new Error(
+      json.error?.message ||
+        "Google Places no respondió. Revisa la API key y que Places API (New) esté habilitada.",
+    );
   }
-  return null;
+  return json;
 }
 
 export async function searchPlaces(input: {
   niche: string;
   city: string;
   country?: string;
-  radiusM?: number;
+  locale?: "es" | "en";
   limit?: number;
 }): Promise<Place[]> {
-  const country = input.country || "MX";
-  const limit = Math.min(Math.max(input.limit ?? 25, 5), 40);
-  const radius = input.radiusM ?? 8000;
-  const { lat, lon } = await geocodeCity(input.city, country);
-
-  const clauses = filtersForNiche(input.niche)
-    .map((f) => `${f}(around:${radius},${lat},${lon});`)
-    .join("\n");
-
-  const query = `[out:json][timeout:12];(${clauses});out tags center ${limit};`;
-  const res = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      "User-Agent": "NexusAtelier/1.0 (nexusglobalsuministros.com)",
-    },
-    body: `data=${encodeURIComponent(query)}`,
-  });
-
-  if (!res.ok) {
-    throw new Error("OpenStreetMap no respondió. Intenta de nuevo en un minuto.");
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error(
+      "Falta GOOGLE_MAPS_API_KEY. Crea una clave en Google Cloud (Places API New) y ponla en Vercel y .env.local.",
+    );
   }
 
-  const json = (await res.json()) as {
-    elements?: Array<{ tags?: Record<string, string> }>;
-  };
+  const country = normalizeCountry(input.country || "HN");
+  const locale = localeFromCountry(country);
+  const limit = Math.min(Math.max(input.limit ?? 20, 5), 20);
+  const languageCode = locale === "en" ? "en" : "es";
+  const where =
+    locale === "en"
+      ? `${input.niche} in ${input.city}, ${countryLabel(country)}`
+      : `${input.niche} en ${input.city}, ${countryLabel(country)}`;
+  const textQuery = `${where}`;
+  const includedType = includedTypeFor(input.niche);
 
   const seen = new Set<string>();
   const places: Place[] = [];
+  let pageToken: string | undefined;
+  const fetchCap = Math.min(limit * 2, 40);
 
-  for (const el of json.elements ?? []) {
-    const name = tag(el.tags, "name", "name:es", "brand");
-    if (!name) continue;
-    const key = name.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    const website = tag(
-      el.tags,
-      "website",
-      "contact:website",
-      "url",
+  for (let page = 0; page < 2 && places.length < fetchCap; page++) {
+    const json = await searchTextPage(
+      apiKey,
+      textQuery,
+      languageCode,
+      includedType,
+      pageToken,
     );
-    const email = tag(el.tags, "email", "contact:email");
-    const phone = tag(el.tags, "phone", "contact:phone", "mobile");
-
-    const hasWeb = Boolean(website);
-    places.push({
-      company: name,
-      website,
-      email: email && email.includes("@") ? email : null,
-      phone,
-      city: input.city,
-      notes: hasWeb
-        ? `Web pública: ${website}. Evaluar si conviene rediseño.`
-        : "Sin sitio web en directorio público — candidato a oferta Nexus.",
-      score: hasWeb ? 48 : 72,
-    });
-    if (places.length >= limit) break;
+    const ranked = [...(json.places ?? [])].sort(
+      (a, b) => (a.userRatingCount ?? 0) - (b.userRatingCount ?? 0),
+    );
+    for (const raw of ranked) {
+      const place = toPlace(raw, input.city);
+      if (!place) continue;
+      const key = place.company.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      places.push(place);
+      if (places.length >= fetchCap) break;
+    }
+    pageToken = json.nextPageToken;
+    if (!pageToken) break;
   }
 
-  return places;
+  return places.slice(0, limit);
+}
+
+export async function searchContactablePlaces(input: {
+  niche: string;
+  city: string;
+  country?: string;
+  locale?: "es" | "en";
+  limit?: number;
+}) {
+  const places = await searchPlaces(input);
+  const withWebsite = places.filter((p) => Boolean(p.website));
+  const enriched = await enrichPlacesWithEmails(withWebsite);
+  const withEmail = enriched.filter((p) => Boolean(p.email));
+  return {
+    scanned: places.length,
+    withWebsite: withWebsite.length,
+    withEmail,
+  };
 }

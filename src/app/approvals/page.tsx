@@ -8,6 +8,7 @@ export default function ApprovalsPage() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"pending" | "">("pending");
+  const [blast, setBlast] = useState<string | null>(null);
 
   async function load(next = filter) {
     const qs = next ? `?status=${next}` : "";
@@ -21,19 +22,50 @@ export default function ApprovalsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function approve(id: string) {
+  async function approve(id: string, quiet = false) {
     setBusyId(id);
     const res = await fetch(`/api/approvals/${id}/approve`, { method: "POST" });
     const json = await res.json();
     setBusyId(null);
     if (!res.ok) {
-      alert(json.error || "Error");
+      if (!quiet) alert(json.error || "Error");
+      return { ok: false as const, error: json.error || "Error", simulated: false };
+    }
+    if (json.result?.simulated && !quiet) {
+      alert("Aprobado en modo simulado (sin mail configurado). El mensaje quedó registrado.");
+    }
+    if (!quiet) await load();
+    return {
+      ok: true as const,
+      simulated: Boolean(json.result?.simulated),
+    };
+  }
+
+  async function sendAll() {
+    const pending = approvals.filter((a) => a.status === "pending");
+    if (pending.length === 0) {
+      alert("No hay pendientes.");
       return;
     }
-    if (json.result?.simulated) {
-      alert("Aprobado en modo simulado (sin RESEND_API_KEY). El mensaje quedó registrado.");
+    if (
+      !confirm(
+        `Vas a enviar ${pending.length} correos de verdad, uno tras otro. Gmail/Resend pueden cortar si mandas demasiados seguidos. ¿Seguimos?`,
+      )
+    ) {
+      return;
     }
+    let sent = 0;
+    let failed = 0;
+    for (let i = 0; i < pending.length; i++) {
+      setBlast(`Enviando ${i + 1} de ${pending.length}…`);
+      const result = await approve(pending[i].id, true);
+      if (result.ok) sent += 1;
+      else failed += 1;
+      await new Promise((r) => setTimeout(r, 450));
+    }
+    setBlast(null);
     await load();
+    alert(`Listo. Enviados: ${sent}. Fallidos: ${failed}.`);
   }
 
   async function reject(id: string) {
@@ -56,11 +88,11 @@ export default function ApprovalsPage() {
           Approvals
         </h1>
         <p className="text-sm text-[var(--muted)]">
-          Nada sale por Resend sin tu OK (fase segura).
+          Revisa o manda el lote. Un clic en Enviar todos recorre los pendientes.
         </p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           className={`btn ${filter === "pending" ? "btn-primary" : "btn-ghost"}`}
           onClick={() => {
@@ -79,6 +111,15 @@ export default function ApprovalsPage() {
         >
           Todos
         </button>
+        {filter === "pending" && approvals.length > 0 && (
+          <button
+            className="btn btn-primary"
+            disabled={!!busyId || !!blast}
+            onClick={sendAll}
+          >
+            {blast || `Enviar todos (${approvals.length})`}
+          </button>
+        )}
       </div>
 
       <div className="space-y-3">

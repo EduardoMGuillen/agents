@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { store } from "@/lib/store";
+import { localeFromCountry, normalizeCountry } from "@/lib/locale";
 
 const createSchema = z.object({
   name: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable(),
+  email: z.string().email(),
   phone: z.string().optional().nullable(),
   company: z.string().optional().nullable(),
   website: z.string().optional().nullable(),
@@ -54,7 +55,12 @@ export async function POST(req: Request) {
     );
   }
 
-  const lead = await store.createLead(parsed.data);
+  const country = normalizeCountry(parsed.data.country || "HN");
+  const lead = await store.createLead({
+    ...parsed.data,
+    country,
+    locale: localeFromCountry(country),
+  });
   await store.createEvent({
     agent: "system",
     event_type: "lead_created",
