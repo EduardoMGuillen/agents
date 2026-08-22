@@ -51,9 +51,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative px-3 py-2.5 text-sm transition-colors duration-200 ${
+                className={`relative block px-3 py-2.5 text-sm transition-colors duration-200 ${
                   active
-                    ? "bg-[#111827] font-medium text-white"
+                    ? "nav-active"
                     : "text-[var(--muted)] hover:bg-gray-100 hover:text-[var(--ink)]"
                 }`}
               >

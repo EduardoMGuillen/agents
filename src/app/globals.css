@@ -38,8 +38,13 @@ body {
 }
 
 a {
-  color: inherit;
   text-decoration: none;
+}
+
+.nav-active {
+  background: #111827;
+  color: #ffffff;
+  font-weight: 600;
 }
 
 button,
