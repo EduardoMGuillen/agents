@@ -1,0 +1,4 @@
+company,email,phone,website,city,country,niche,notes
+Café Aurora,hola@cafeaurora.example,+504 9999-0000,,Tegucigalpa,HN,restaurante,Sin web
+Clínica Norte,,+504 2222-1111,https://clinicanorte.example,San Pedro Sula,HN,clinica,Web antigua
+Taller Fajardo,ventas@taller.example,,,Tegucigalpa,HN,taller,Candidato local
