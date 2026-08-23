@@ -131,8 +131,8 @@ export default function CampaignsPage() {
         <form onSubmit={onCsv} className="panel space-y-4 p-5">
           <h2 className="display text-xl">Importar CSV</h2>
           <p className="text-sm text-[var(--muted)]">
-            Columnas: company o empresa, email (obligatorio), phone, website,
-            city, niche. Sin email se omite la fila.
+            También puedes pegar webs en un .txt y correr Scrapling en tu PC:
+            python scripts/scrapling/scrape_import.py --sites-file sites.txt
           </p>
           <div>
             <label className="label">Archivo .csv</label>

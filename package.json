@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "scrape": "python scripts/scrapling/scrape_import.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

@@ -21,6 +21,17 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  const workerSecret =
+    process.env.SCRAPER_SECRET?.trim() ||
+    process.env.FORM_WEBHOOK_SECRET?.trim();
+  if (
+    workerSecret &&
+    pathname === "/api/leads/import" &&
+    req.headers.get("x-nexus-worker-secret") === workerSecret
+  ) {
+    return NextResponse.next();
+  }
+
   const session = req.cookies.get(COOKIE)?.value;
   if (session === password) {
     return NextResponse.next();
