@@ -2,8 +2,8 @@
 
 import { FormEvent, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { motion } from "framer-motion";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function LoginForm() {
   const router = useRouter();
@@ -31,20 +31,23 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-[var(--bg)] px-4">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <motion.form
         onSubmit={onSubmit}
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="panel w-full max-w-sm p-6"
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="panel w-full max-w-sm p-7"
       >
-        <div className="mb-4 flex justify-center">
-          <Image src="/NexusGPTHD.png" alt="Nexus" width={120} height={120} className="object-contain" />
+        <div className="mb-5 flex justify-center">
+          <img src="/nexus-logo.png" alt="Nexus" width={112} height={112} className="object-contain bg-transparent" />
         </div>
-        <h1 className="display mt-1 text-xl">Entra al CRM</h1>
+        <h1 className="display text-xl">Entrar</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Agentes de ventas y outreach de Nexus.
+          Nexus Global · leads y outreach
         </p>
         <div className="mt-6">
           <label className="label">Password</label>
@@ -59,7 +62,7 @@ function LoginForm() {
         </div>
         {error && <p className="mt-3 text-sm text-[var(--danger)]">{error}</p>}
         <button className="btn btn-primary mt-5 w-full" disabled={busy}>
-          {busy ? "…" : "Continue"}
+          {busy ? "…" : "Entrar"}
         </button>
       </motion.form>
     </div>

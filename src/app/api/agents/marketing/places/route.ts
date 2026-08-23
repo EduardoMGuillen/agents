@@ -3,15 +3,16 @@ import { z } from "zod";
 import { searchContactablePlaces } from "@/lib/places";
 import { importLeadRows } from "@/lib/import-leads";
 import { localeFromCountry, normalizeCountry } from "@/lib/locale";
+import { clampProspectingLimit } from "@/lib/prospecting-limits";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 800;
 
 const schema = z.object({
   niche: z.string().min(2),
   city: z.string().min(2),
   country: z.string().optional(),
-  limit: z.number().min(5).max(20).optional(),
+  limit: z.number().min(5).max(200).optional(),
 });
 
 export async function POST(req: Request) {
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
       city: parsed.data.city,
       country,
       locale,
-      limit: parsed.data.limit ?? 12,
+      limit: clampProspectingLimit(parsed.data.limit),
     });
 
     if (found.scanned === 0) {

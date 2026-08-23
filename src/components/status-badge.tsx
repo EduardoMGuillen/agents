@@ -19,5 +19,5 @@ export function StatusBadge({ status }: { status: LeadStatus }) {
 export function ScorePill({ score }: { score: number }) {
   const tone =
     score >= 70 ? "badge-ok" : score >= 40 ? "badge-warn" : "badge";
-  return <span className={`badge ${tone}`}>IA {score}</span>;
+  return <span className={`badge ${tone}`}>{score}</span>;
 }

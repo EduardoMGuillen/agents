@@ -115,13 +115,15 @@ export default function PipelinePage() {
             Arrastra las tarjetas entre etapas.
           </p>
         </div>
-        <div className="flex gap-2">
-          <input
-            className="field w-52"
-            placeholder="Buscar…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
+        <div className="flex items-center gap-2">
+          <div className="w-52 shrink-0">
+            <input
+              className="field"
+              placeholder="Buscar…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
           <Link href="/leads" className="btn btn-primary">
             + Nuevo lead
           </Link>
@@ -129,18 +131,14 @@ export default function PipelinePage() {
       </div>
 
       <div className="ai-banner">
-        <span className="text-[#c4b5fd]">✦</span>
-        <span>
-          La IA priorizó {hot} leads calientes. {pending} siguen en Nuevos sin
-          contactar.
-        </span>
+        {hot} leads priorizados. {pending} siguen en Nuevos sin contactar.
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Leads activos" value={String(leads.length)} hint={`${pending} nuevos`} color="#00BAC4" />
         <Stat label="En pipeline" value={String(contacted + replied)} hint="en movimiento" color="#7C8CB5" />
         <Stat label="Propuesta" value={String(replied)} hint="calificados / respondieron" color="#017A85" />
-        <Stat label="Cerrados" value={String(won)} hint="ganados" color="#102865" />
+        <Stat label="Cerrados" value={String(won)} hint="ganados" color="#00BAC4" />
       </section>
 
       {loading ? (
@@ -154,7 +152,7 @@ export default function PipelinePage() {
             return (
               <div
                 key={col.id}
-                className="flex w-[280px] shrink-0 flex-col rounded-2xl border border-[var(--line)] bg-[rgba(8,11,16,0.65)] p-3"
+                className="flex min-w-[260px] flex-1 flex-col rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-3"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -182,13 +180,20 @@ export default function PipelinePage() {
                         setDragId(lead.id);
                         e.dataTransfer.setData("text/lead-id", lead.id);
                       }}
-                      className="cursor-grab rounded-xl border border-[var(--line)] bg-[#10161f] p-3 active:cursor-grabbing"
+                      className="cursor-grab rounded-xl border border-[var(--line)] bg-[var(--field)] p-3 active:cursor-grabbing"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex gap-2">
                           <span
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-black"
-                            style={{ background: AVATAR[i % AVATAR.length] }}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
+                            style={{
+                              background: AVATAR[i % AVATAR.length],
+                              color:
+                                AVATAR[i % AVATAR.length] === "#00BAC4" ||
+                                AVATAR[i % AVATAR.length] === "#9AA5B1"
+                                  ? "#062428"
+                                  : "#ffffff",
+                            }}
                           >
                             {initials(lead)}
                           </span>
@@ -212,16 +217,7 @@ export default function PipelinePage() {
                         <span className="text-[var(--muted)]">
                           {lead.country} · {ago(lead.updated_at)}
                         </span>
-                        <span
-                          className="rounded-full px-2 py-0.5 font-semibold"
-                          style={{
-                            color: col.dot,
-                            background: "rgba(0,0,0,0.35)",
-                            border: `1px solid ${col.tint}`,
-                          }}
-                        >
-                          IA {lead.score}
-                        </span>
+                        <span className="badge badge-accent">{lead.score}</span>
                       </div>
                     </article>
                   ))}

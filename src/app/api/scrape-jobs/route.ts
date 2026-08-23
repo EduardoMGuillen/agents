@@ -4,15 +4,19 @@ import { store } from "@/lib/store";
 import { searchContactablePlaces } from "@/lib/places";
 import { importLeadRows } from "@/lib/import-leads";
 import { localeFromCountry, normalizeCountry } from "@/lib/locale";
+import {
+  clampProspectingLimit,
+  prospectingLimitMax,
+} from "@/lib/prospecting-limits";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 800;
 
 const schema = z.object({
   niche: z.string().min(2),
   city: z.string().min(2),
   country: z.string().optional(),
-  limit: z.number().min(5).max(20).optional(),
+  limit: z.number().min(5).max(200).optional(),
 });
 
 export async function POST(req: Request) {
@@ -24,7 +28,7 @@ export async function POST(req: Request) {
 
   const country = normalizeCountry(parsed.data.country || "HN");
   const locale = localeFromCountry(country);
-  const limit = parsed.data.limit ?? 12;
+  const limit = clampProspectingLimit(parsed.data.limit);
 
   try {
     const found = await searchContactablePlaces({
@@ -111,5 +115,5 @@ export async function GET() {
   const jobs = (await store.listCampaigns()).filter((c) =>
     ["queued", "running", "done", "error"].includes(c.status),
   );
-  return NextResponse.json({ jobs });
+  return NextResponse.json({ jobs, maxLimit: prospectingLimitMax() });
 }

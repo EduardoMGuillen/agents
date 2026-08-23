@@ -66,33 +66,57 @@ def search_places(niche: str, city: str, country: str, limit: int) -> list[dict]
     if not api_key:
         raise SystemExit("Falta GOOGLE_MAPS_API_KEY en .env.local")
     label = COUNTRY_NAMES.get(country.upper(), country)
-    query = f"{niche} en {city}, {label}"
-    res = httpx.post(
-        "https://places.googleapis.com/v1/places:searchText",
-        headers={
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": api_key,
-            "X-Goog-FieldMask": (
-                "places.displayName,places.formattedAddress,places.websiteUri,"
-                "places.nationalPhoneNumber,places.internationalPhoneNumber,"
-                "places.businessStatus,places.userRatingCount"
-            ),
-        },
-        json={"textQuery": query, "languageCode": "es", "maxResultCount": min(20, max(limit, 5))},
-        timeout=30,
-    )
-    res.raise_for_status()
-    places = []
-    for raw in res.json().get("places") or []:
-        if raw.get("businessStatus") and raw.get("businessStatus") != "OPERATIONAL":
-            continue
-        name = ((raw.get("displayName") or {}).get("text") or "").strip()
-        website = (raw.get("websiteUri") or "").strip()
-        if not name or not website:
-            continue
-        places.append({"company": name, "website": website})
-        if len(places) >= limit:
-            break
+    queries = [f"{niche} en {city}, {label}"]
+    for area in ("centro", "norte", "sur", "este", "oeste", "zona 1"):
+        queries.append(f"{niche} en {city} {area}, {label}")
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": api_key,
+        "X-Goog-FieldMask": (
+            "places.displayName,places.formattedAddress,places.websiteUri,"
+            "places.nationalPhoneNumber,places.internationalPhoneNumber,"
+            "places.businessStatus,places.userRatingCount,nextPageToken"
+        ),
+    }
+    seen: set[str] = set()
+    places: list[dict] = []
+    cap = max(5, min(int(limit), 200))
+    for query in queries:
+        token = None
+        for _ in range(8):
+            payload = {
+                "textQuery": query,
+                "languageCode": "es",
+                "maxResultCount": 20,
+            }
+            if token:
+                payload["pageToken"] = token
+            res = httpx.post(
+                "https://places.googleapis.com/v1/places:searchText",
+                headers=headers,
+                json=payload,
+                timeout=30,
+            )
+            res.raise_for_status()
+            data = res.json()
+            for raw in data.get("places") or []:
+                if raw.get("businessStatus") and raw.get("businessStatus") != "OPERATIONAL":
+                    continue
+                name = ((raw.get("displayName") or {}).get("text") or "").strip()
+                website = (raw.get("websiteUri") or "").strip()
+                if not name or not website:
+                    continue
+                key = name.lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                places.append({"company": name, "website": website})
+                if len(places) >= cap:
+                    return places
+            token = data.get("nextPageToken")
+            if not token:
+                break
+            time.sleep(1.2)
     return places
 
 
@@ -104,7 +128,7 @@ def run_job(job: dict) -> dict:
         meta = json.loads(job.get("notes") or "{}")
     except json.JSONDecodeError:
         meta = {}
-    limit = int(meta.get("limit") or 12)
+    limit = max(5, min(int(meta.get("limit") or 80), 200))
     found_places = search_places(niche, city, country, limit)
     rows = []
     for i, place in enumerate(found_places):

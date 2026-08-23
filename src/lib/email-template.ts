@@ -22,7 +22,7 @@ export function emailAssetOrigin() {
 }
 
 export function logoUrl() {
-  return `${emailAssetOrigin()}/NexusGPTHD.png`;
+  return `${emailAssetOrigin()}/nexus-logo.png`;
 }
 
 function escapeHtml(value: string) {

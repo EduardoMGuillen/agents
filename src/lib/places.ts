@@ -1,6 +1,7 @@
 import { enrichPlacesWithEmails } from "@/lib/enrich-email";
 import { isLikelyChain } from "@/lib/chains";
 import { localeFromCountry, normalizeCountry } from "@/lib/locale";
+import { clampProspectingLimit, hostedOnVercel } from "@/lib/prospecting-limits";
 
 export type Place = {
   company: string;
@@ -155,6 +156,27 @@ function toPlace(p: GooglePlace, city: string): Place | null {
   };
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function queryVariants(
+  niche: string,
+  city: string,
+  country: string,
+  locale: "es" | "en",
+) {
+  const where =
+    locale === "en"
+      ? `${niche} in ${city}, ${countryLabel(country)}`
+      : `${niche} en ${city}, ${countryLabel(country)}`;
+  const areas =
+    locale === "en"
+      ? ["downtown", "north", "south", "east", "west", "center"]
+      : ["centro", "norte", "sur", "este", "oeste", "zona 1"];
+  return [where, ...areas.map((area) => `${where} ${area}`)];
+}
+
 async function searchTextPage(
   apiKey: string,
   textQuery: string,
@@ -195,6 +217,7 @@ export async function searchPlaces(input: {
   country?: string;
   locale?: "es" | "en";
   limit?: number;
+  requireWebsite?: boolean;
 }): Promise<Place[]> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
   if (!apiKey) {
@@ -205,45 +228,46 @@ export async function searchPlaces(input: {
 
   const country = normalizeCountry(input.country || "HN");
   const locale = localeFromCountry(country);
-  const limit = Math.min(Math.max(input.limit ?? 20, 5), 20);
+  const limit = clampProspectingLimit(input.limit);
   const languageCode = locale === "en" ? "en" : "es";
-  const where =
-    locale === "en"
-      ? `${input.niche} in ${input.city}, ${countryLabel(country)}`
-      : `${input.niche} en ${input.city}, ${countryLabel(country)}`;
-  const textQuery = `${where}`;
   const includedType = includedTypeFor(input.niche);
+  const queries = queryVariants(input.niche, input.city, country, locale);
+  const maxPages = hostedOnVercel() ? 2 : 8;
+  const maxQueries = hostedOnVercel() ? 1 : queries.length;
 
   const seen = new Set<string>();
   const places: Place[] = [];
-  let pageToken: string | undefined;
-  const fetchCap = Math.min(limit * 2, 40);
 
-  for (let page = 0; page < 2 && places.length < fetchCap; page++) {
-    const json = await searchTextPage(
-      apiKey,
-      textQuery,
-      languageCode,
-      includedType,
-      pageToken,
-    );
-    const ranked = [...(json.places ?? [])].sort(
-      (a, b) => (a.userRatingCount ?? 0) - (b.userRatingCount ?? 0),
-    );
-    for (const raw of ranked) {
-      const place = toPlace(raw, input.city);
-      if (!place) continue;
-      const key = place.company.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      places.push(place);
-      if (places.length >= fetchCap) break;
+  for (let q = 0; q < maxQueries && places.length < limit; q++) {
+    let pageToken: string | undefined;
+    for (let page = 0; page < maxPages && places.length < limit; page++) {
+      const json = await searchTextPage(
+        apiKey,
+        queries[q],
+        languageCode,
+        q === 0 ? includedType : undefined,
+        pageToken,
+      );
+      const ranked = [...(json.places ?? [])].sort(
+        (a, b) => (a.userRatingCount ?? 0) - (b.userRatingCount ?? 0),
+      );
+      for (const raw of ranked) {
+        const place = toPlace(raw, input.city);
+        if (!place) continue;
+        if (input.requireWebsite && !place.website) continue;
+        const key = place.company.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        places.push(place);
+        if (places.length >= limit) break;
+      }
+      pageToken = json.nextPageToken;
+      if (!pageToken) break;
+      await sleep(1200);
     }
-    pageToken = json.nextPageToken;
-    if (!pageToken) break;
   }
 
-  return places.slice(0, limit);
+  return places;
 }
 
 export async function searchContactablePlaces(input: {
@@ -253,12 +277,23 @@ export async function searchContactablePlaces(input: {
   locale?: "es" | "en";
   limit?: number;
   thorough?: boolean;
+  requireWebsite?: boolean;
 }) {
-  const places = await searchPlaces(input);
+  const places = await searchPlaces({
+    ...input,
+    requireWebsite: input.requireWebsite ?? Boolean(input.thorough),
+  });
   const withWebsite = places.filter((p) => Boolean(p.website));
+  const concurrency = hostedOnVercel()
+    ? input.thorough
+      ? 3
+      : 4
+    : input.thorough
+      ? 8
+      : 6;
   const enriched = await enrichPlacesWithEmails(
     withWebsite,
-    input.thorough ? 3 : 4,
+    concurrency,
     Boolean(input.thorough),
   );
   const withEmail = enriched.filter((p) => Boolean(p.email));

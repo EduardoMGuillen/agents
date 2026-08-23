@@ -80,17 +80,17 @@ export default function DashboardPage() {
     { label: "Leads activos", value: data.stats.totalLeads, hint: `${data.stats.newLeads} nuevos` },
     { label: "Por enviar", value: data.stats.pendingApprovals, hint: "en Approvals" },
     { label: "Respondieron", value: data.pipeline.replied ?? 0, hint: "hay que dar seguimiento" },
-    { label: "Score IA medio", value: data.stats.avgScore, hint: `${hot} priorizados` },
+    { label: "Score medio", value: data.stats.avgScore, hint: `${hot} priorizados` },
   ];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="kicker">CRM · agentes · outreach</p>
-          <h1 className="display mt-1 text-3xl">Tu operación, en automático</h1>
+          <p className="kicker">Nexus</p>
+          <h1 className="display mt-1 text-3xl">Operación comercial</h1>
           <p className="mt-2 max-w-xl text-sm text-[var(--muted)]">
-            La IA califica, redacta y prioriza. Tú cierras y construyes la web.
+            Leads, pipeline y outreach en un solo lugar.
           </p>
         </div>
         <div className="flex gap-2">
@@ -106,8 +106,8 @@ export default function DashboardPage() {
       <div className="ai-banner">
         <span className="text-[var(--accent)]">✦</span>
         <span>
-          La IA priorizó {hot} leads y dejó {data.stats.pendingApprovals} mails
-          listos para enviar.
+          {hot} leads priorizados · {data.stats.pendingApprovals} mails listos
+          para enviar.
         </span>
       </div>
 

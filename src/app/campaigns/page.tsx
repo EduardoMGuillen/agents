@@ -10,6 +10,7 @@ export default function CampaignsPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<number | null>(null);
+  const [maxLimit, setMaxLimit] = useState(20);
   const [stats, setStats] = useState<{
     found?: number;
     withWebsite?: number;
@@ -17,9 +18,16 @@ export default function CampaignsPage() {
   } | null>(null);
 
   async function load() {
-    const res = await fetch("/api/dashboard");
-    const json = await res.json();
+    const [dash, scrape] = await Promise.all([
+      fetch("/api/dashboard"),
+      fetch("/api/scrape-jobs"),
+    ]);
+    const json = await dash.json();
+    const scrapeJson = await scrape.json();
     setCampaigns(json.campaigns ?? []);
+    if (typeof scrapeJson.maxLimit === "number") {
+      setMaxLimit(scrapeJson.maxLimit);
+    }
   }
 
   useEffect(() => {
@@ -126,8 +134,9 @@ export default function CampaignsPage() {
         <form onSubmit={onPlaces} className="panel space-y-4 p-5">
           <h2 className="display text-xl">Buscar negocios</h2>
           <p className="text-sm text-[var(--muted)]">
-            Google Maps encuentra PYMEs (sin cadenas). El botón Scrapling corre
-            en Vercel: busca y saca emails públicos de las webs.
+            Google Maps encuentra PYMEs (sin cadenas). En local puedes pedir
+            hasta {maxLimit} webs; en Vercel el tope es 20 por el timeout. Un
+            lote grande puede tardar varios minutos.
           </p>
           <div>
             <label className="label">Nicho</label>
@@ -143,7 +152,15 @@ export default function CampaignsPage() {
           </div>
           <div>
             <label className="label">Máximo</label>
-            <input name="limit" type="number" min={5} max={20} defaultValue={12} className="field" />
+            <input
+              key={maxLimit}
+              name="limit"
+              type="number"
+              min={5}
+              max={maxLimit}
+              defaultValue={Math.min(80, maxLimit)}
+              className="field"
+            />
           </div>
           <div className="flex flex-wrap gap-2">
             <button className="btn btn-primary" disabled={!!busy}>
@@ -158,7 +175,9 @@ export default function CampaignsPage() {
                 if (form) onScrapling(form);
               }}
             >
-              {busy === "scrapling" ? "Buscando emails…" : "Buscar con Scrapling"}
+              {busy === "scrapling"
+                ? "Scrapeando webs… esto puede tardar"
+                : "Buscar con Scrapling"}
             </button>
           </div>
         </form>

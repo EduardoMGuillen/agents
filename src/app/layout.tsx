@@ -10,10 +10,12 @@ const sans = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus — CRM con IA",
-  description: "Leads, agentes y outreach para Nexus Global",
-  icons: { icon: "/NexusGPTHD.png" },
+  title: "Nexus",
+  description: "Leads y outreach de Nexus Global",
+  icons: { icon: "/nexus-logo.png" },
 };
+
+const themeBoot = `(function(){try{var t=localStorage.getItem("nexus-theme");if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"}document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","dark")}})();`;
 
 export default function RootLayout({
   children,
@@ -21,7 +23,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${sans.variable} h-full`}>
+    <html lang="es" className={`${sans.variable} h-full`} data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
+      </head>
       <body className="min-h-full antialiased">
         <AppShell>{children}</AppShell>
       </body>

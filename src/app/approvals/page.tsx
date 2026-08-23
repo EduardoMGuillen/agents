@@ -1,16 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { Approval } from "@/lib/types";
+import type { Approval, Lead } from "@/lib/types";
 import { renderEmailHtml } from "@/lib/email-template";
 
 const GAP_MS = 1500;
 
+const STATUS_LABEL: Record<Approval["status"], string> = {
+  pending: "Pendiente",
+  approved: "Aprobado",
+  rejected: "Rechazado",
+  sent: "Enviado",
+};
+
+function leadLabel(lead: Lead | undefined, approval: Approval) {
+  if (!lead) return approval.to_email;
+  return lead.company || lead.name || approval.to_email;
+}
+
 export default function ApprovalsPage() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [leadsById, setLeadsById] = useState<Record<string, Lead>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"pending" | "">("pending");
+  const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftSubject, setDraftSubject] = useState("");
+  const [draftBody, setDraftBody] = useState("");
+  const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState<{
     current: number;
     total: number;
@@ -22,15 +41,48 @@ export default function ApprovalsPage() {
 
   async function load(next = filter) {
     const qs = next ? `?status=${next}` : "";
-    const res = await fetch(`/api/approvals${qs}`);
-    const json = await res.json();
-    setApprovals(json.approvals ?? []);
+    const [approvalsRes, leadsRes] = await Promise.all([
+      fetch(`/api/approvals${qs}`),
+      fetch("/api/leads"),
+    ]);
+    const approvalsJson = await approvalsRes.json();
+    const leadsJson = await leadsRes.json();
+    setApprovals(approvalsJson.approvals ?? []);
+    const map: Record<string, Lead> = {};
+    for (const lead of (leadsJson.leads ?? []) as Lead[]) {
+      map[lead.id] = lead;
+    }
+    setLeadsById(map);
   }
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return approvals;
+    return approvals.filter((a) => {
+      const lead = leadsById[a.lead_id];
+      const hay = [
+        a.subject,
+        a.to_email,
+        a.body,
+        a.agent,
+        a.status,
+        lead?.company,
+        lead?.name,
+        lead?.email,
+        lead?.city,
+        lead?.niche,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [approvals, leadsById, query]);
 
   async function approve(id: string, quiet = false) {
     setBusyId(id);
@@ -48,10 +100,7 @@ export default function ApprovalsPage() {
     return { ok: true as const };
   }
 
-  async function waitGap(
-    ms: number,
-    patch: (sec: number) => void,
-  ) {
+  async function waitGap(ms: number, patch: (sec: number) => void) {
     const start = Date.now();
     while (Date.now() - start < ms) {
       const left = Math.ceil((ms - (Date.now() - start)) / 1000);
@@ -61,9 +110,9 @@ export default function ApprovalsPage() {
   }
 
   async function sendAll() {
-    const pending = approvals.filter((a) => a.status === "pending");
+    const pending = visible.filter((a) => a.status === "pending");
     if (pending.length === 0) {
-      alert("No hay pendientes.");
+      alert("No hay pendientes en esta lista.");
       return;
     }
     if (
@@ -125,16 +174,46 @@ export default function ApprovalsPage() {
     await load();
   }
 
+  function startEdit(a: Approval) {
+    setOpenId(a.id);
+    setEditingId(a.id);
+    setDraftSubject(a.subject);
+    setDraftBody(a.body);
+  }
+
+  async function saveEdit(id: string) {
+    setSaving(true);
+    const res = await fetch(`/api/approvals/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subject: draftSubject.trim(),
+        body: draftBody.trim(),
+      }),
+    });
+    const json = await res.json();
+    setSaving(false);
+    if (!res.ok) {
+      alert(json.error || "No se pudo guardar");
+      return;
+    }
+    setApprovals((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, ...json.approval } : a)),
+    );
+    setEditingId(null);
+  }
+
   const pct = progress
     ? Math.round((progress.current / progress.total) * 100)
     : 0;
+  const pendingCount = visible.filter((a) => a.status === "pending").length;
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="display text-2xl">Approvals</h1>
+        <h1 className="display text-2xl">Mensajes</h1>
         <p className="text-sm text-[var(--muted)]">
-          El envío sale solo por Resend. En lote hay 4 segundos entre cada mail.
+          Borradores colapsados. Ábrelos para revisar, editar o enviar.
         </p>
       </div>
 
@@ -158,7 +237,15 @@ export default function ApprovalsPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="min-w-[220px] flex-1">
+          <input
+            className="field"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Filtrar por negocio, asunto, email…"
+          />
+        </div>
         <button
           className={`btn ${filter === "pending" ? "btn-primary" : "btn-ghost"}`}
           onClick={() => {
@@ -177,7 +264,7 @@ export default function ApprovalsPage() {
         >
           Todos
         </button>
-        {filter === "pending" && approvals.length > 0 && (
+        {filter === "pending" && pendingCount > 0 && (
           <button
             className="btn btn-primary"
             disabled={!!busyId || !!progress}
@@ -185,60 +272,143 @@ export default function ApprovalsPage() {
           >
             {progress
               ? `Enviando… ${pct}%`
-              : `Enviar todos (${approvals.length})`}
+              : `Enviar lista (${pendingCount})`}
           </button>
         )}
       </div>
 
-      <div className="space-y-3">
-        {approvals.length === 0 ? (
+      <div className="space-y-2">
+        {visible.length === 0 ? (
           <div className="panel p-4 text-sm text-[var(--muted)]">
-            No hay approvals. Genera un draft desde un lead.
+            {approvals.length === 0
+              ? "No hay mensajes. Genera un borrador desde un lead."
+              : "Ningún mensaje coincide con el filtro."}
           </div>
         ) : (
-          approvals.map((a) => (
-            <article key={a.id} className="panel p-4">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="font-semibold">{a.subject}</p>
-                  <p className="text-xs text-[var(--muted)]">
-                    Para {a.to_email} · {a.agent} · {a.status}
-                  </p>
-                </div>
-                <Link
-                  href={`/leads/${a.lead_id}`}
-                  className="text-xs text-[var(--accent)]"
+          visible.map((a) => {
+            const lead = leadsById[a.lead_id];
+            const open = openId === a.id;
+            const editing = editingId === a.id;
+            const previewBody = editing ? draftBody : a.body;
+            const previewSubject = editing ? draftSubject : a.subject;
+            const company = leadLabel(lead, a);
+            return (
+              <article key={a.id} className="panel overflow-hidden">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                  onClick={() => {
+                    setOpenId(open ? null : a.id);
+                    if (open && editingId === a.id) setEditingId(null);
+                  }}
                 >
-                  Ver lead
-                </Link>
-              </div>
-              <iframe
-                title={a.subject}
-                className="mb-3 h-[520px] w-full overflow-hidden rounded-2xl border border-[var(--line)] bg-black"
-                srcDoc={renderEmailHtml(a.body, {
-                  previewLogo: "/NexusGPTHD.png",
-                })}
-              />
-              {a.status === "pending" && (
-                <div className="flex gap-2">
-                  <button
-                    className="btn btn-primary"
-                    disabled={busyId === a.id || !!progress}
-                    onClick={() => approve(a.id)}
-                  >
-                    {busyId === a.id ? "…" : "Aprobar y enviar"}
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    disabled={busyId === a.id || !!progress}
-                    onClick={() => reject(a.id)}
-                  >
-                    Rechazar
-                  </button>
-                </div>
-              )}
-            </article>
-          ))
+                  <span className="w-4 shrink-0 text-[var(--muted)]">
+                    {open ? "▾" : "▸"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{company}</p>
+                    <p className="truncate text-xs text-[var(--muted)]">
+                      {previewSubject}
+                    </p>
+                  </div>
+                  <span className="hidden truncate text-xs text-[var(--muted)] sm:block">
+                    {a.to_email}
+                  </span>
+                  <span className="badge shrink-0">
+                    {STATUS_LABEL[a.status]}
+                  </span>
+                </button>
+
+                {open && (
+                  <div className="space-y-3 border-t border-[var(--line)] px-4 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
+                      <span>
+                        {a.agent} · {a.to_email}
+                      </span>
+                      <Link
+                        href={`/leads/${a.lead_id}`}
+                        className="text-[var(--accent)]"
+                      >
+                        Ver lead
+                      </Link>
+                    </div>
+
+                    {editing ? (
+                      <div className="space-y-2">
+                        <label className="label">Asunto</label>
+                        <input
+                          className="field"
+                          value={draftSubject}
+                          onChange={(e) => setDraftSubject(e.target.value)}
+                        />
+                        <label className="label">Cuerpo</label>
+                        <textarea
+                          className="field min-h-48 font-mono text-sm"
+                          value={draftBody}
+                          onChange={(e) => setDraftBody(e.target.value)}
+                        />
+                      </div>
+                    ) : null}
+
+                    <iframe
+                      title={previewSubject}
+                      className="h-[380px] w-full overflow-hidden rounded-2xl border border-[var(--line)] bg-black"
+                      srcDoc={renderEmailHtml(previewBody, {
+                        previewLogo: "/nexus-logo.png",
+                      })}
+                    />
+
+                    {a.status === "pending" && (
+                      <div className="flex flex-wrap gap-2">
+                        {editing ? (
+                          <>
+                            <button
+                              className="btn btn-primary"
+                              disabled={saving || !!progress}
+                              onClick={() => saveEdit(a.id)}
+                            >
+                              {saving ? "Guardando…" : "Guardar"}
+                            </button>
+                            <button
+                              className="btn btn-ghost"
+                              disabled={saving}
+                              onClick={() => setEditingId(null)}
+                            >
+                              Cancelar
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="btn btn-ghost"
+                            disabled={!!progress}
+                            onClick={() => startEdit(a)}
+                          >
+                            Editar
+                          </button>
+                        )}
+                        <button
+                          className="btn btn-primary"
+                          disabled={
+                            busyId === a.id || !!progress || editing
+                          }
+                          onClick={() => approve(a.id)}
+                        >
+                          {busyId === a.id ? "…" : "Aprobar y enviar"}
+                        </button>
+                        <button
+                          className="btn btn-danger"
+                          disabled={busyId === a.id || !!progress}
+                          onClick={() => reject(a.id)}
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </article>
+            );
+          })
         )}
       </div>
     </div>
