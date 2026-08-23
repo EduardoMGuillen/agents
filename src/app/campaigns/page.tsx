@@ -3,11 +3,44 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Campaign, Lead } from "@/lib/types";
+import type { CampaignMeta } from "@/lib/campaign-meta";
+import { leadsToCsv } from "@/lib/csv";
+import {
+  ProspectingOverlay,
+  type HuntInfo,
+} from "@/components/prospecting-overlay";
+
+type Batch = {
+  campaign: Campaign;
+  meta: CampaignMeta;
+  leads: Lead[];
+};
+
+const KIND_LABEL: Record<string, string> = {
+  scrapling: "Scrapling",
+  maps: "Maps",
+  csv: "CSV",
+  otros: "Otras",
+};
+
+function downloadLeadsCsv(name: string, leads: Lead[]) {
+  const blob = new Blob([leadsToCsv(leads)], {
+    type: "text/csv;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${name.replace(/[^a-zA-Z0-9áéíóúñüÁÉÍÓÚÑÜ]+/g, "_").slice(0, 60) || "leads"}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function CampaignsPage() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [created, setCreated] = useState<Lead[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<string | null>(null);
+  const [hunt, setHunt] = useState<HuntInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<number | null>(null);
   const [maxLimit, setMaxLimit] = useState(20);
@@ -18,15 +51,11 @@ export default function CampaignsPage() {
   } | null>(null);
 
   async function load() {
-    const [dash, scrape] = await Promise.all([
-      fetch("/api/dashboard"),
-      fetch("/api/scrape-jobs"),
-    ]);
-    const json = await dash.json();
-    const scrapeJson = await scrape.json();
-    setCampaigns(json.campaigns ?? []);
-    if (typeof scrapeJson.maxLimit === "number") {
-      setMaxLimit(scrapeJson.maxLimit);
+    const res = await fetch("/api/prospecting");
+    const json = await res.json();
+    setBatches(json.batches ?? []);
+    if (typeof json.maxLimit === "number") {
+      setMaxLimit(json.maxLimit);
     }
   }
 
@@ -37,6 +66,7 @@ export default function CampaignsPage() {
   function applyResult(
     json: {
       leads?: Lead[];
+      campaign?: Campaign | null;
       skipped?: number;
       error?: unknown;
       found?: number;
@@ -58,70 +88,102 @@ export default function CampaignsPage() {
       );
       return;
     }
-    setCreated(json.leads ?? []);
+    const leads = json.leads ?? [];
+    setNewIds(new Set(leads.map((l) => l.id)));
     setSkipped(json.skipped ?? 0);
+    if (json.campaign?.id) setOpenId(json.campaign.id);
   }
 
   async function onPlaces(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy("places");
     setError(null);
-    setCreated([]);
+    setNewIds(new Set());
     setStats(null);
     const fd = new FormData(e.currentTarget);
-    const res = await fetch("/api/agents/marketing/places", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        niche: String(fd.get("niche")),
-        city: String(fd.get("city")),
-        country: String(fd.get("country") || "HN"),
-        limit: Number(fd.get("limit") || 12),
-      }),
-    });
-    const json = await res.json();
-    setBusy(null);
-    applyResult(json, res.ok);
-    await load();
+    const huntInfo: HuntInfo = {
+      mode: "places",
+      niche: String(fd.get("niche")),
+      city: String(fd.get("city")),
+      country: String(fd.get("country") || "HN"),
+      limit: Number(fd.get("limit") || 12),
+    };
+    setHunt(huntInfo);
+    try {
+      const res = await fetch("/api/agents/marketing/places", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          niche: huntInfo.niche,
+          city: huntInfo.city,
+          country: huntInfo.country,
+          limit: huntInfo.limit,
+        }),
+      });
+      const json = await res.json();
+      applyResult(json, res.ok);
+      await load();
+    } finally {
+      setBusy(null);
+      setHunt(null);
+    }
   }
 
   async function onScrapling(form: HTMLFormElement) {
     setBusy("scrapling");
     setError(null);
-    setCreated([]);
+    setNewIds(new Set());
     setStats(null);
     const fd = new FormData(form);
-    const res = await fetch("/api/scrape-jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        niche: String(fd.get("niche")),
-        city: String(fd.get("city")),
-        country: String(fd.get("country") || "HN"),
-        limit: Number(fd.get("limit") || 12),
-      }),
-    });
-    const json = await res.json();
-    setBusy(null);
-    applyResult(json, res.ok);
-    await load();
+    const huntInfo: HuntInfo = {
+      mode: "scrapling",
+      niche: String(fd.get("niche")),
+      city: String(fd.get("city")),
+      country: String(fd.get("country") || "HN"),
+      limit: Number(fd.get("limit") || 12),
+    };
+    setHunt(huntInfo);
+    try {
+      const res = await fetch("/api/scrape-jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          niche: huntInfo.niche,
+          city: huntInfo.city,
+          country: huntInfo.country,
+          limit: huntInfo.limit,
+        }),
+      });
+      const json = await res.json();
+      applyResult(json, res.ok);
+      await load();
+    } finally {
+      setBusy(null);
+      setHunt(null);
+    }
   }
 
   async function onCsv(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy("csv");
     setError(null);
-    setCreated([]);
-    const fd = new FormData(e.currentTarget);
-    const res = await fetch("/api/leads/import", { method: "POST", body: fd });
-    const json = await res.json();
-    setBusy(null);
-    applyResult(json, res.ok);
-    await load();
+    setNewIds(new Set());
+    setHunt({ mode: "csv" });
+    try {
+      const fd = new FormData(e.currentTarget);
+      const res = await fetch("/api/leads/import", { method: "POST", body: fd });
+      const json = await res.json();
+      applyResult(json, res.ok);
+      await load();
+    } finally {
+      setBusy(null);
+      setHunt(null);
+    }
   }
 
   return (
     <div className="mx-auto max-w-5xl space-y-10">
+      <ProspectingOverlay hunt={hunt} />
       <header>
         <h1 className="display text-2xl">Prospecting</h1>
         <p className="mt-2 max-w-xl text-sm text-[var(--muted)]">
@@ -196,7 +258,7 @@ export default function CampaignsPage() {
             <input name="url" className="field" placeholder="https://…" />
           </div>
           <div>
-            <label className="label">Nombre de la tanda</label>
+            <label className="label">Nombre de la búsqueda</label>
             <input name="campaignName" className="field" />
           </div>
           <button className="btn btn-primary" disabled={!!busy}>
@@ -207,52 +269,140 @@ export default function CampaignsPage() {
 
       {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
 
-      {stats && (
-        <p className="text-sm text-[var(--muted)]">
-          Maps: {stats.found ?? 0} negocios · {stats.withWebsite ?? 0} con web ·{" "}
-          {stats.withEmail ?? 0} con email
-        </p>
-      )}
-
-      {created.length > 0 && (
-        <div>
-          <p className="text-sm text-[var(--muted)]">
-            {created.length} altas
-            {skipped ? ` · ${skipped} duplicados omitidos` : ""}
-          </p>
-          <ul className="mt-4 divide-y divide-[var(--line)] border-t border-b border-[var(--line)]">
-            {created.map((l) => (
-              <li key={l.id} className="flex flex-wrap justify-between gap-2 py-3 text-sm">
-                <Link href={`/leads/${l.id}`}>{l.company}</Link>
-                <span className="text-[var(--muted)]">
-                  {l.website ? "con web" : "sin web"} · {l.email || "sin email"}
-                </span>
-              </li>
-            ))}
-          </ul>
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="display text-xl">Resultados</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Cada búsqueda queda colapsada. Ábrela para ver los leads o bajar el CSV.
+            </p>
+          </div>
+          {stats && (
+            <p className="text-sm text-[var(--muted)]">
+              {stats.found ?? 0} negocios · {stats.withWebsite ?? 0} con web ·{" "}
+              {stats.withEmail ?? 0} con email
+              {skipped ? ` · ${skipped} duplicados` : ""}
+            </p>
+          )}
         </div>
-      )}
 
-      <div>
-        <h2 className="text-sm font-medium">Tandas</h2>
-        {campaigns.length === 0 ? (
-          <p className="mt-3 text-sm text-[var(--muted)]">Todavía no hay tandas.</p>
+        {batches.length === 0 ? (
+          <p className="text-sm text-[var(--muted)]">
+            Aún no hay resultados. Busca un nicho o importa un CSV.
+          </p>
         ) : (
-          <ul className="mt-3 divide-y divide-[var(--line)] border-t border-[var(--line)]">
-            {campaigns.map((c) => (
-              <li key={c.id} className="flex flex-wrap justify-between gap-2 py-3 text-sm">
-                <span>
-                  {c.name}
-                  <span className="ml-2 text-[var(--muted)]">
-                    {c.niche} · {c.city}
-                    {c.status !== "active" ? ` · ${c.status}` : ""}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
+          batches.map((batch) => {
+            const open = openId === batch.campaign.id;
+            const kind = batch.meta.kind
+              ? KIND_LABEL[batch.meta.kind] || batch.meta.kind
+              : "Búsqueda";
+            return (
+              <article key={batch.campaign.id} className="panel overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3">
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    onClick={() =>
+                      setOpenId(open ? null : batch.campaign.id)
+                    }
+                  >
+                    <span className="w-4 shrink-0 text-[var(--muted)]">
+                      {open ? "▾" : "▸"}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">
+                        {batch.campaign.name}
+                      </p>
+                      <p className="truncate text-xs text-[var(--muted)]">
+                        {kind}
+                        {batch.campaign.city ? ` · ${batch.campaign.city}` : ""}
+                        {` · ${batch.leads.length} leads`}
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    disabled={batch.leads.length === 0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      downloadLeadsCsv(batch.campaign.name, batch.leads);
+                    }}
+                  >
+                    Descargar CSV
+                  </button>
+                </div>
+
+                {open && (
+                  <div className="border-t border-[var(--line)]">
+                    {batch.leads.length === 0 ? (
+                      <p className="px-4 py-4 text-sm text-[var(--muted)]">
+                        Esta búsqueda no dejó leads con email.
+                      </p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[640px] text-left text-sm">
+                          <thead className="text-xs text-[var(--muted)]">
+                            <tr>
+                              <th className="px-4 py-3 font-medium">Negocio</th>
+                              <th className="px-4 py-3 font-medium">Email</th>
+                              <th className="px-4 py-3 font-medium">Web</th>
+                              <th className="px-4 py-3 font-medium">Ciudad</th>
+                              <th className="px-4 py-3 font-medium">Nicho</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--line)]">
+                            {batch.leads.map((l) => (
+                              <tr key={l.id}>
+                                <td className="px-4 py-3">
+                                  <Link
+                                    href={`/leads/${l.id}`}
+                                    className="font-medium"
+                                  >
+                                    {l.company || l.name || "Sin nombre"}
+                                  </Link>
+                                  {newIds.has(l.id) ? (
+                                    <span className="badge badge-accent ml-2">
+                                      Nuevo
+                                    </span>
+                                  ) : null}
+                                </td>
+                                <td className="px-4 py-3 text-[var(--muted)]">
+                                  {l.email || "—"}
+                                </td>
+                                <td className="px-4 py-3">
+                                  {l.website ? (
+                                    <a
+                                      href={l.website}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-[var(--accent)]"
+                                    >
+                                      Sitio
+                                    </a>
+                                  ) : (
+                                    <span className="text-[var(--muted)]">—</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-[var(--muted)]">
+                                  {l.city || l.country}
+                                </td>
+                                <td className="px-4 py-3 text-[var(--muted)]">
+                                  {l.niche || "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </article>
+            );
+          })
         )}
-      </div>
+      </section>
     </div>
   );
 }

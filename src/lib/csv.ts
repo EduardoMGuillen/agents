@@ -125,3 +125,52 @@ export function parseLeadsCsv(text: string): CsvLeadRow[] {
 
   return rows;
 }
+
+function csvCell(value: string | null | undefined) {
+  const text = value ?? "";
+  if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+  return text;
+}
+
+export function leadsToCsv(
+  leads: Array<{
+    company: string | null;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    website: string | null;
+    city: string | null;
+    country: string;
+    niche: string | null;
+    notes: string | null;
+  }>,
+) {
+  const header = [
+    "company",
+    "name",
+    "email",
+    "phone",
+    "website",
+    "city",
+    "country",
+    "niche",
+    "notes",
+  ];
+  const lines = [
+    header.join(","),
+    ...leads.map((l) =>
+      [
+        csvCell(l.company),
+        csvCell(l.name),
+        csvCell(l.email),
+        csvCell(l.phone),
+        csvCell(l.website),
+        csvCell(l.city),
+        csvCell(l.country),
+        csvCell(l.niche),
+        csvCell(l.notes),
+      ].join(","),
+    ),
+  ];
+  return `\uFEFF${lines.join("\n")}`;
+}

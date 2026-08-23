@@ -4,6 +4,7 @@ import { store } from "@/lib/store";
 import { searchContactablePlaces } from "@/lib/places";
 import { importLeadRows } from "@/lib/import-leads";
 import { localeFromCountry, normalizeCountry } from "@/lib/locale";
+import { stringifyCampaignMeta } from "@/lib/campaign-meta";
 import {
   clampProspectingLimit,
   prospectingLimitMax,
@@ -47,12 +48,13 @@ export async function POST(req: Request) {
       country,
       locale,
       status: found.withEmail.length ? "done" : "error",
-      notes: JSON.stringify({
+      notes: stringifyCampaignMeta({
         kind: "scrapling",
         limit,
         scanned: found.scanned,
         withWebsite: found.withWebsite,
         withEmail: found.withEmail.length,
+        leadIds: [],
       }),
     });
 
@@ -91,6 +93,15 @@ export async function POST(req: Request) {
       })),
       "marketing_agent",
       campaign.name,
+      {
+        campaignId: campaign.id,
+        meta: {
+          kind: "scrapling",
+          limit,
+          scanned: found.scanned,
+          withWebsite: found.withWebsite,
+        },
+      },
     );
 
     return NextResponse.json(

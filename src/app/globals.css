@@ -239,3 +239,42 @@ html[data-theme="dark"] .btn-primary {
 .theme-btn:hover {
   border-color: var(--accent);
 }
+
+.hunt-orb {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, #7ef0f6, #00bac4 42%, #017a85);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: hunt-pulse 1.8s ease-out infinite;
+}
+
+.hunt-orb::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: hunt-ring 1.8s ease-out infinite;
+}
+
+@keyframes hunt-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 16px transparent;
+  }
+}
+
+@keyframes hunt-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}

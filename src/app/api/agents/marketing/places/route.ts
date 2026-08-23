@@ -67,6 +67,14 @@ export async function POST(req: Request) {
       })),
       "marketing_agent",
       `Maps ${parsed.data.niche} · ${parsed.data.city}`,
+      {
+        meta: {
+          kind: "maps",
+          scanned: found.scanned,
+          withWebsite: found.withWebsite,
+          withEmail: found.withEmail.length,
+        },
+      },
     );
 
     return NextResponse.json(

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Lead, LeadStatus } from "@/lib/types";
+import { isVisibleOnPipeline } from "@/lib/pipeline-visibility";
 
 const COLUMNS: Array<{
   id: string;
@@ -11,7 +12,7 @@ const COLUMNS: Array<{
   dot: string;
   tint: string;
 }> = [
-  { id: "new", title: "Nuevos", statuses: ["new"], dot: "#00BAC4", tint: "rgba(0,186,196,0.55)" },
+  { id: "new", title: "Leads nuevos", statuses: ["new"], dot: "#00BAC4", tint: "rgba(0,186,196,0.55)" },
   {
     id: "contacted",
     title: "Contactados",
@@ -76,29 +77,38 @@ export default function PipelinePage() {
     load();
   }, []);
 
+  const fresh = useMemo(
+    () => leads.filter(isVisibleOnPipeline),
+    [leads],
+  );
+
   const visible = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return leads.filter((l) => l.status !== "lost");
-    return leads.filter(
-      (l) =>
-        l.status !== "lost" &&
-        `${l.company} ${l.name} ${l.email} ${l.niche} ${l.country}`
-          .toLowerCase()
-          .includes(t),
+    if (!t) return fresh;
+    return fresh.filter((l) =>
+      `${l.company} ${l.name} ${l.email} ${l.niche} ${l.country}`
+        .toLowerCase()
+        .includes(t),
     );
-  }, [leads, q]);
+  }, [fresh, q]);
 
-  const pending = leads.filter((l) => l.status === "new").length;
-  const contacted = leads.filter((l) => l.status === "contacted").length;
-  const replied = leads.filter((l) =>
+  const pending = fresh.filter((l) => l.status === "new").length;
+  const contacted = fresh.filter((l) => l.status === "contacted").length;
+  const replied = fresh.filter((l) =>
     ["replied", "qualified", "handed_off"].includes(l.status),
   ).length;
-  const won = leads.filter((l) => l.status === "won").length;
-  const hot = leads.filter((l) => l.score >= 58 && l.status === "new").length;
+  const won = fresh.filter((l) => l.status === "won").length;
+  const hot = fresh.filter((l) => l.score >= 58 && l.status === "new").length;
 
   async function move(id: string, columnId: string) {
     const status = primaryStatus(columnId);
-    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)));
+    setLeads((prev) =>
+      prev.map((l) =>
+        l.id === id
+          ? { ...l, status, updated_at: new Date().toISOString() }
+          : l,
+      ),
+    );
     await fetch(`/api/leads/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -112,7 +122,9 @@ export default function PipelinePage() {
         <div>
           <h1 className="display text-3xl">Pipeline</h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Arrastra las tarjetas entre etapas.
+            Nuevos y contactados se ocultan a las 2 semanas; propuesta y
+            cerrados a los 2 meses. El lead sigue en Leads; si contestan,
+            vuelven aquí.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -131,11 +143,11 @@ export default function PipelinePage() {
       </div>
 
       <div className="ai-banner">
-        {hot} leads priorizados. {pending} siguen en Nuevos sin contactar.
+        {hot} leads priorizados. {pending} siguen en Leads nuevos sin contactar.
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Leads activos" value={String(leads.length)} hint={`${pending} nuevos`} color="#00BAC4" />
+        <Stat label="Leads nuevos" value={String(pending)} hint="sin contactar" color="#00BAC4" />
         <Stat label="En pipeline" value={String(contacted + replied)} hint="en movimiento" color="#7C8CB5" />
         <Stat label="Propuesta" value={String(replied)} hint="calificados / respondieron" color="#017A85" />
         <Stat label="Cerrados" value={String(won)} hint="ganados" color="#00BAC4" />
