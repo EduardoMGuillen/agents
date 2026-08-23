@@ -21,7 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-[220px] shrink-0 border-r border-[var(--line)] bg-white md:flex md:flex-col">
+      <aside className="hidden w-[228px] shrink-0 border-r border-[var(--line)] bg-[rgba(8,11,16,0.92)] md:flex md:flex-col">
         <Link href="/" className="flex items-center gap-2.5 border-b border-[var(--line)] px-4 py-4">
           <motion.span
             whileHover={{ rotate: 6, scale: 1.05 }}
@@ -38,10 +38,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </motion.span>
           <span>
             <span className="block text-sm font-semibold leading-tight">Nexus</span>
-            <span className="block text-[11px] text-[var(--muted)]">Sales ops</span>
+            <span className="block text-[11px] text-[var(--muted)]">CRM con IA</span>
           </span>
         </Link>
-        <nav className="flex flex-1 flex-col p-2">
+        <nav className="flex flex-1 flex-col gap-1 p-2">
           {NAV.map((item) => {
             const active =
               item.href === "/"
@@ -51,10 +51,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative block px-3 py-2.5 text-sm transition-colors duration-200 ${
+                className={`relative block rounded-xl px-3 py-2.5 text-sm transition-colors duration-200 ${
                   active
                     ? "nav-active"
-                    : "text-[var(--muted)] hover:bg-gray-100 hover:text-[var(--ink)]"
+                    : "text-[var(--muted)] hover:bg-white/5 hover:text-[var(--ink)]"
                 }`}
               >
                 {item.label}
@@ -73,7 +73,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <nav className="flex items-center gap-3 overflow-x-auto border-b border-[var(--line)] bg-white px-3 py-2 md:hidden">
+        <nav className="flex items-center gap-3 overflow-x-auto border-b border-[var(--line)] bg-[rgba(8,11,16,0.92)] px-3 py-2 md:hidden">
           <Image src="/NexusGPTHD.png" alt="Nexus" width={28} height={28} />
           {NAV.map((item) => (
             <Link

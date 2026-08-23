@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f3f4f6;
-  --paper: #ffffff;
-  --ink: #111827;
-  --muted: #6b7280;
-  --line: #d1d5db;
-  --accent: #16a34a;
-  --accent-hover: #15803d;
-  --ok: #047857;
-  --warn: #b45309;
-  --danger: #dc2626;
+  --bg: #05070b;
+  --paper: #0c1118;
+  --ink: #f4f7fb;
+  --muted: #8b98a8;
+  --line: #1c2532;
+  --accent: #22d3ee;
+  --accent-hover: #67e8f9;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --danger: #fb7185;
+  --glow: rgba(34, 211, 238, 0.18);
 }
 
 @theme inline {
@@ -30,7 +31,10 @@ body {
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(900px 480px at 85% 0%, rgba(34, 211, 238, 0.12), transparent 55%),
+    radial-gradient(700px 400px at 10% 90%, rgba(99, 102, 241, 0.12), transparent 50%),
+    var(--bg);
   color: var(--ink);
   font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
   font-size: 14px;
@@ -39,12 +43,14 @@ body {
 
 a {
   text-decoration: none;
+  color: inherit;
 }
 
 .nav-active {
-  background: #111827;
-  color: #ffffff;
+  background: rgba(34, 211, 238, 0.12);
+  color: #ecfeff;
   font-weight: 600;
+  border: 1px solid rgba(34, 211, 238, 0.35);
 }
 
 button,
@@ -56,8 +62,8 @@ textarea {
 
 .display {
   font-weight: 650;
-  letter-spacing: -0.025em;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
 .kicker {
@@ -67,18 +73,15 @@ textarea {
 }
 
 .panel {
-  background: var(--paper);
+  background: rgba(12, 17, 24, 0.86);
   border: 1px solid var(--line);
-  border-radius: 2px;
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.2s ease;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
 }
 
 .panel-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.08);
-  border-color: #9ca3af;
+  border-color: rgba(34, 211, 238, 0.35);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.08), 0 18px 40px rgba(0, 0, 0, 0.35);
 }
 
 .btn {
@@ -86,14 +89,13 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  border-radius: 2px;
+  border-radius: 999px;
   border: 1px solid transparent;
   padding: 0.55rem 1rem;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-    background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .btn:disabled {
@@ -105,49 +107,44 @@ textarea {
   transform: translateY(-1px);
 }
 
-.btn:not(:disabled):active {
-  transform: translateY(0);
-}
-
 .btn-primary {
-  background: var(--accent);
-  color: #fff;
+  background: #e8fbff;
+  color: #042f2e;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: #ffffff;
 }
 
 .btn-ghost {
-  background: var(--paper);
+  background: transparent;
   border-color: var(--line);
   color: var(--ink);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  border-color: var(--ink);
+  border-color: var(--accent);
 }
 
 .btn-danger {
-  background: #fff;
-  border-color: #fecaca;
+  background: transparent;
+  border-color: rgba(251, 113, 133, 0.4);
   color: var(--danger);
 }
 
 .field {
   width: 100%;
-  background: #fff;
+  background: #080b10;
   border: 1px solid var(--line);
-  border-radius: 2px;
+  border-radius: 12px;
   padding: 0.55rem 0.75rem;
   color: var(--ink);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .field:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+  box-shadow: 0 0 0 3px var(--glow);
 }
 
 .label {
@@ -161,41 +158,37 @@ textarea {
 .badge {
   display: inline-flex;
   align-items: center;
-  border-radius: 2px;
-  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  padding: 0.12rem 0.5rem;
   font-size: 11px;
   font-weight: 600;
   border: 1px solid var(--line);
-  background: #fff;
+  background: rgba(8, 11, 16, 0.7);
   color: var(--muted);
 }
 
 .badge-ok {
-  border-color: #86efac;
+  border-color: rgba(52, 211, 153, 0.4);
   color: var(--ok);
 }
 
 .badge-warn {
-  border-color: #fcd34d;
+  border-color: rgba(251, 191, 36, 0.4);
   color: var(--warn);
 }
 
 .badge-accent {
-  border-color: #86efac;
+  border-color: rgba(34, 211, 238, 0.45);
   color: var(--accent);
 }
 
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.rise {
-  animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+.ai-banner {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  border-radius: 14px;
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.16), rgba(34, 211, 238, 0.08));
+  padding: 0.85rem 1rem;
+  font-size: 13px;
 }

@@ -43,8 +43,10 @@ function LoginForm() {
           <Image src="/NexusGPTHD.png" alt="Nexus" width={40} height={40} />
           <p className="text-sm font-semibold">Nexus</p>
         </div>
-        <h1 className="display mt-1 text-xl">Sign in</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">Internal sales ops.</p>
+        <h1 className="display mt-1 text-xl">Entra al CRM</h1>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Agentes de ventas y outreach de Nexus.
+        </p>
         <div className="mt-6">
           <label className="label">Password</label>
           <input

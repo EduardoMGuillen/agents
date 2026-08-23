@@ -10,8 +10,8 @@ const sans = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus Office",
-  description: "Sales ops — Nexus Global",
+  title: "Nexus — CRM con IA",
+  description: "Leads, agentes y outreach para Nexus Global",
   icons: { icon: "/NexusGPTHD.png" },
 };
 
