@@ -93,23 +93,77 @@ export async function draftSalesOutreach(leadId: string) {
   return { lead, approval, draft };
 }
 
+export async function pruneStaleFirstTouchDrafts() {
+  const approvals = await store.listApprovals();
+  const alreadySent = new Set(
+    approvals
+      .filter((a) => a.status === "sent" || a.status === "approved")
+      .map((a) => a.lead_id),
+  );
+  let pruned = 0;
+  const now = new Date().toISOString();
+
+  for (const a of approvals) {
+    if (a.status !== "pending") continue;
+    if (!alreadySent.has(a.lead_id)) continue;
+    await store.updateApproval(a.id, {
+      status: "rejected",
+      resolved_at: now,
+    });
+    pruned += 1;
+  }
+
+  const pendingByLead = new Map<string, typeof approvals>();
+  for (const a of await store.listApprovals("pending")) {
+    const list = pendingByLead.get(a.lead_id) ?? [];
+    list.push(a);
+    pendingByLead.set(a.lead_id, list);
+  }
+  for (const list of pendingByLead.values()) {
+    if (list.length < 2) continue;
+    list.sort(
+      (a, b) => +new Date(b.created_at) - +new Date(a.created_at),
+    );
+    for (const extra of list.slice(1)) {
+      await store.updateApproval(extra.id, {
+        status: "rejected",
+        resolved_at: now,
+      });
+      pruned += 1;
+    }
+  }
+
+  return { pruned };
+}
+
 export async function draftAllFirstTouch() {
+  const pruned = await pruneStaleFirstTouchDrafts();
   const leads = await store.listLeads();
-  const pending = await store.listApprovals("pending");
-  const hasPending = new Set(pending.map((a) => a.lead_id));
+  const approvals = await store.listApprovals();
+  const alreadyHasDraft = new Set(
+    approvals
+      .filter(
+        (a) =>
+          a.status === "pending" ||
+          a.status === "sent" ||
+          a.status === "approved",
+      )
+      .map((a) => a.lead_id),
+  );
   let created = 0;
   let skipped = 0;
 
   for (const lead of leads) {
-    if (!lead.email || hasPending.has(lead.id)) {
+    if (!lead.email || alreadyHasDraft.has(lead.id) || lead.status !== "new") {
       skipped += 1;
       continue;
     }
     await draftSalesOutreach(lead.id);
+    alreadyHasDraft.add(lead.id);
     created += 1;
   }
 
-  return { created, skipped, total: leads.length };
+  return { created, skipped, pruned: pruned.pruned, total: leads.length };
 }
 
 export async function draftSalesReply(
