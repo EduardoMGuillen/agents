@@ -209,9 +209,12 @@ export async function draftSalesReply(
   const nextStatus =
     draft.readyForHandoff
       ? "qualified"
-      : lead.status === "new"
-        ? "replied"
-        : lead.status;
+      : lead.status === "won" ||
+          lead.status === "lost" ||
+          lead.status === "handed_off" ||
+          lead.status === "qualified"
+        ? lead.status
+        : "replied";
 
   await store.updateLead(lead.id, {
     status: nextStatus,

@@ -18,11 +18,11 @@ export function isMailConfigured() {
 }
 
 export function getReplyToEmail() {
-  return (
-    process.env.INBOUND_REPLY_TO?.trim() ||
-    process.env.OWNER_NOTIFY_EMAIL?.trim() ||
-    undefined
-  );
+  // Replies must hit the Resend-receiving inbox (same domain as From),
+  // not a personal Proton address, or the CRM never sees them.
+  const from = getFromEmail();
+  const match = from.match(/<([^>]+)>/);
+  return match?.[1] || from;
 }
 
 export function getFromEmail() {

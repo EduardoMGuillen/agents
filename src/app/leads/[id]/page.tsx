@@ -133,6 +133,13 @@ export default function LeadDetailPage({
           <button
             className="btn btn-ghost"
             disabled={!!busy}
+            onClick={() => setStatus("replied")}
+          >
+            Contestó → Propuesta
+          </button>
+          <button
+            className="btn btn-ghost"
+            disabled={!!busy}
             onClick={() => setStatus("won")}
           >
             Marcar ganado
@@ -228,7 +235,7 @@ export default function LeadDetailPage({
               placeholder="Hola, me interesa una cotización para…"
             />
             <button className="btn btn-ghost" disabled={!!busy || !lead.email}>
-              {busy === "reply" ? "Redactando…" : "Generar reply (approval)"}
+              {busy === "reply" ? "Redactando…" : "Pegar reply → Propuesta + borrador"}
             </button>
           </form>
         </section>

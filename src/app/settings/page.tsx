@@ -81,15 +81,17 @@ export default function SettingsPage() {
       <section className="panel space-y-3 p-4">
         <h2 className="font-semibold">Respuestas de email</h2>
         <p className="text-sm text-[var(--muted)]">
-          Reply-To apunta a tu Proton, así ves el reply en el inbox. Resend
-          inbound manda el mismo reply al CRM cuando el MX de recepción esté
-          verificado.
+          Cuando contestan a hola@nexusglobalsuministros.com, Resend avisa al
+          CRM: el lead pasa a Propuesta y te llega copia si tienes
+          OWNER_NOTIFY_EMAIL. Si el reply cayó en Proton, pégalo en el lead o
+          pulsa “Contestó → Propuesta”.
         </p>
-        <pre className="overflow-x-auto rounded-xl bg-[var(--bg)] p-3 text-xs text-[var(--muted)]">{`DNS (dominio raíz nexusglobalsuministros.com)
-Tipo: MX
-Nombre: @
-Prioridad: 9
-Valor: inbound-smtp.us-east-1.amazonaws.com`}</pre>
+        <pre className="overflow-x-auto rounded-xl bg-[var(--bg)] p-3 text-xs text-[var(--muted)]">{`Resend → Webhooks → email.received
+URL: ${origin}/api/webhooks/resend
+
+DNS del dominio (si aún no está):
+Tipo MX · @ · prioridad 10
+inbound.resend.com`}</pre>
       </section>
 
       <section className="panel space-y-3 p-4">
