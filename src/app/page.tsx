@@ -146,8 +146,8 @@ export default function DashboardPage() {
         <div className="panel p-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-medium">Leads calientes</h2>
-            <Link href="/leads" className="text-xs text-[var(--accent)]">
-              Ver todos
+            <Link href="/pipeline" className="text-xs text-[var(--accent)]">
+              Ver pipeline
             </Link>
           </div>
           {data.hotLeads.length === 0 ? (

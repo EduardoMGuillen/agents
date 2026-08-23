@@ -6,11 +6,12 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
 const NAV = [
-  { href: "/", label: "Dashboard" },
+  { href: "/", label: "Inicio" },
   { href: "/leads", label: "Leads" },
-  { href: "/approvals", label: "Approvals" },
+  { href: "/pipeline", label: "Pipeline" },
+  { href: "/approvals", label: "Mensajes" },
   { href: "/campaigns", label: "Prospecting" },
-  { href: "/settings", label: "Settings" },
+  { href: "/settings", label: "Ajustes" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -42,6 +43,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </span>
         </Link>
         <nav className="flex flex-1 flex-col gap-1 p-2">
+          <Link href="/leads" className="btn btn-primary mb-2 w-full">
+            + Nuevo lead
+          </Link>
           {NAV.map((item) => {
             const active =
               item.href === "/"
