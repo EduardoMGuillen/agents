@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { LEAD_STATUSES, STATUS_LABELS } from "@/lib/types";
 import { ScorePill, StatusBadge } from "@/components/status-badge";
+import { countryName } from "@/lib/locale";
 
 type ReplyFilter = "" | "not_sent" | "waiting" | "replied";
 
@@ -31,6 +32,8 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [status, setStatus] = useState<LeadStatus | "">("");
   const [replyFilter, setReplyFilter] = useState<ReplyFilter>("");
+  const [nameQuery, setNameQuery] = useState("");
+  const [country, setCountry] = useState("");
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -76,6 +79,28 @@ export default function LeadsPage() {
     await load();
   }
 
+  const countries = useMemo(() => {
+    const set = new Set(
+      leads.map((l) => (l.country || "").trim().toUpperCase()).filter(Boolean),
+    );
+    return [...set].sort((a, b) =>
+      countryName(a).localeCompare(countryName(b), "es"),
+    );
+  }, [leads]);
+
+  const visible = useMemo(() => {
+    const q = nameQuery.trim().toLowerCase();
+    return leads.filter((l) => {
+      if (replyFilter && replyState(l) !== replyFilter) return false;
+      if (country && (l.country || "").toUpperCase() !== country) return false;
+      if (q) {
+        const hay = `${l.name || ""} ${l.company || ""} ${l.email || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [leads, replyFilter, nameQuery, country]);
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -114,6 +139,33 @@ export default function LeadsPage() {
           <button className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
             {showForm ? "Cerrar" : "Nuevo lead"}
           </button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="min-w-[200px] flex-1">
+          <label className="label">Nombre</label>
+          <input
+            className="field"
+            value={nameQuery}
+            onChange={(e) => setNameQuery(e.target.value)}
+            placeholder="Empresa, contacto o email"
+          />
+        </div>
+        <div className="w-[220px]">
+          <label className="label">País</label>
+          <select
+            className="field"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {countries.map((code) => (
+              <option key={code} value={code}>
+                {countryName(code) || code} ({code})
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -216,10 +268,11 @@ export default function LeadsPage() {
       <div className="panel overflow-hidden">
         {loading ? (
           <p className="p-4 text-[var(--muted)]">Cargando…</p>
-        ) : leads.filter((l) => !replyFilter || replyState(l) === replyFilter)
-            .length === 0 ? (
+        ) : visible.length === 0 ? (
           <p className="p-4 text-[var(--muted)]">
-            No hay leads. Crea uno manual o genera prospectos en Prospecting.
+            {leads.length === 0
+              ? "No hay leads. Crea uno manual o genera prospectos en Prospecting."
+              : "Ningún lead coincide con nombre o país."}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -235,9 +288,7 @@ export default function LeadsPage() {
                 </tr>
               </thead>
               <tbody>
-                {leads
-                  .filter((l) => !replyFilter || replyState(l) === replyFilter)
-                  .map((lead) => (
+                {visible.map((lead) => (
                   <tr
                     key={lead.id}
                     className="border-b border-[var(--line)]/70 hover:bg-[var(--bg-soft)]/50"

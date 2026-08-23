@@ -39,9 +39,8 @@ function LoginForm() {
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="panel w-full max-w-sm p-6"
       >
-        <div className="mb-4 flex items-center gap-3">
-          <Image src="/NexusGPTHD.png" alt="Nexus" width={40} height={40} />
-          <p className="text-sm font-semibold">Nexus</p>
+        <div className="mb-4 flex justify-center">
+          <Image src="/NexusGPTHD.png" alt="Nexus" width={120} height={120} className="object-contain" />
         </div>
         <h1 className="display mt-1 text-xl">Entra al CRM</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">

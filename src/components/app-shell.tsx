@@ -22,12 +22,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-[228px] shrink-0 border-r border-[var(--line)] bg-[rgba(8,11,16,0.92)] md:flex md:flex-col">
+      <aside className="hidden w-[228px] shrink-0 border-r border-[var(--line)] bg-black md:flex md:flex-col">
         <Link href="/" className="flex items-center gap-2.5 border-b border-[var(--line)] px-4 py-4">
           <motion.span
-            whileHover={{ rotate: 6, scale: 1.05 }}
+            whileHover={{ scale: 1.04 }}
             transition={{ type: "spring", stiffness: 380, damping: 18 }}
-            className="relative block h-9 w-9 shrink-0"
+            className="relative block h-[72px] w-[72px] shrink-0"
           >
             <Image
               src="/NexusGPTHD.png"
@@ -37,10 +37,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               priority
             />
           </motion.span>
-          <span>
-            <span className="block text-sm font-semibold leading-tight">Nexus</span>
-            <span className="block text-[11px] text-[var(--muted)]">CRM con IA</span>
-          </span>
+          <span className="block text-[11px] text-[var(--muted)]">CRM con IA</span>
         </Link>
         <nav className="flex flex-1 flex-col gap-1 p-2">
           <Link href="/leads" className="btn btn-primary mb-2 w-full">
@@ -77,8 +74,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <nav className="flex items-center gap-3 overflow-x-auto border-b border-[var(--line)] bg-[rgba(8,11,16,0.92)] px-3 py-2 md:hidden">
-          <Image src="/NexusGPTHD.png" alt="Nexus" width={28} height={28} />
+        <nav className="flex items-center gap-3 overflow-x-auto border-b border-[var(--line)] bg-black px-3 py-2 md:hidden">
+          <Image src="/NexusGPTHD.png" alt="Nexus" width={40} height={40} className="object-contain" />
           {NAV.map((item) => (
             <Link
               key={item.href}

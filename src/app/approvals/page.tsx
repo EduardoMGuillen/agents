@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Approval } from "@/lib/types";
 import { renderEmailHtml } from "@/lib/email-template";
 
-const GAP_MS = 4000;
+const GAP_MS = 1500;
 
 export default function ApprovalsPage() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
@@ -214,7 +214,7 @@ export default function ApprovalsPage() {
               </div>
               <iframe
                 title={a.subject}
-                className="mb-3 h-[420px] w-full border border-[var(--line)] bg-white"
+                className="mb-3 h-[520px] w-full overflow-hidden rounded-2xl border border-[var(--line)] bg-black"
                 srcDoc={renderEmailHtml(a.body, {
                   previewLogo: "/NexusGPTHD.png",
                 })}

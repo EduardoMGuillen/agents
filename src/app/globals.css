@@ -1,17 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #05070b;
-  --paper: #0c1118;
-  --ink: #f4f7fb;
-  --muted: #8b98a8;
-  --line: #1c2532;
-  --accent: #22d3ee;
-  --accent-hover: #67e8f9;
-  --ok: #34d399;
+  --bg: #000000;
+  --paper: #1a1a1a;
+  --ink: #ffffff;
+  --muted: #9aa5b1;
+  --line: #16305f;
+  --accent: #00bac4;
+  --accent-hover: #4fd4db;
+  --navy: #102865;
+  --deep-teal: #017a85;
+  --cloud: #f1f5f9;
+  --ok: #00bac4;
   --warn: #fbbf24;
   --danger: #fb7185;
-  --glow: rgba(34, 211, 238, 0.18);
+  --glow: rgba(0, 186, 196, 0.2);
 }
 
 @theme inline {
@@ -32,8 +35,8 @@ body {
 body {
   margin: 0;
   background:
-    radial-gradient(900px 480px at 85% 0%, rgba(34, 211, 238, 0.12), transparent 55%),
-    radial-gradient(700px 400px at 10% 90%, rgba(99, 102, 241, 0.12), transparent 50%),
+    radial-gradient(900px 480px at 85% 0%, rgba(0, 186, 196, 0.14), transparent 55%),
+    radial-gradient(700px 400px at 10% 90%, rgba(16, 40, 101, 0.45), transparent 50%),
     var(--bg);
   color: var(--ink);
   font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
@@ -47,10 +50,10 @@ a {
 }
 
 .nav-active {
-  background: rgba(34, 211, 238, 0.12);
-  color: #ecfeff;
+  background: rgba(0, 186, 196, 0.12);
+  color: #ffffff;
   font-weight: 600;
-  border: 1px solid rgba(34, 211, 238, 0.35);
+  border: 1px solid rgba(0, 186, 196, 0.4);
 }
 
 button,
@@ -73,15 +76,15 @@ textarea {
 }
 
 .panel {
-  background: rgba(12, 17, 24, 0.86);
+  background: rgba(26, 26, 26, 0.9);
   border: 1px solid var(--line);
   border-radius: 16px;
   backdrop-filter: blur(10px);
 }
 
 .panel-hover:hover {
-  border-color: rgba(34, 211, 238, 0.35);
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.08), 0 18px 40px rgba(0, 0, 0, 0.35);
+  border-color: rgba(0, 186, 196, 0.4);
+  box-shadow: 0 0 0 1px rgba(0, 186, 196, 0.08), 0 18px 40px rgba(0, 0, 0, 0.35);
 }
 
 .btn {
@@ -108,8 +111,8 @@ textarea {
 }
 
 .btn-primary {
-  background: #e8fbff;
-  color: #042f2e;
+  background: #00bac4;
+  color: #102865;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -134,7 +137,7 @@ textarea {
 
 .field {
   width: 100%;
-  background: #080b10;
+  background: #000000;
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 0.55rem 0.75rem;
@@ -178,7 +181,7 @@ textarea {
 }
 
 .badge-accent {
-  border-color: rgba(34, 211, 238, 0.45);
+  border-color: rgba(0, 186, 196, 0.45);
   color: var(--accent);
 }
 
@@ -187,8 +190,8 @@ textarea {
   gap: 0.75rem;
   align-items: center;
   border-radius: 14px;
-  border: 1px solid rgba(167, 139, 250, 0.35);
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.16), rgba(34, 211, 238, 0.08));
+  border: 1px solid rgba(0, 186, 196, 0.35);
+  background: linear-gradient(90deg, rgba(16, 40, 101, 0.55), rgba(0, 186, 196, 0.12));
   padding: 0.85rem 1rem;
   font-size: 13px;
 }

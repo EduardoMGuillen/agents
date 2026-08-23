@@ -11,25 +11,25 @@ const COLUMNS: Array<{
   dot: string;
   tint: string;
 }> = [
-  { id: "new", title: "Nuevos", statuses: ["new"], dot: "#22d3ee", tint: "rgba(34,211,238,0.55)" },
+  { id: "new", title: "Nuevos", statuses: ["new"], dot: "#00BAC4", tint: "rgba(0,186,196,0.55)" },
   {
     id: "contacted",
     title: "Contactados",
     statuses: ["contacted"],
-    dot: "#a78bfa",
-    tint: "rgba(167,139,250,0.55)",
+    dot: "#7C8CB5",
+    tint: "rgba(124,140,181,0.55)",
   },
   {
     id: "proposal",
     title: "Propuesta",
     statuses: ["replied", "qualified", "handed_off"],
-    dot: "#fb923c",
-    tint: "rgba(251,146,60,0.55)",
+    dot: "#017A85",
+    tint: "rgba(1,122,133,0.55)",
   },
-  { id: "closed", title: "Cerrado", statuses: ["won"], dot: "#34d399", tint: "rgba(52,211,153,0.55)" },
+  { id: "closed", title: "Cerrado", statuses: ["won"], dot: "#102865", tint: "rgba(16,40,101,0.7)" },
 ];
 
-const AVATAR = ["#22d3ee", "#a78bfa", "#fb923c", "#34d399", "#f472b6", "#60a5fa"];
+const AVATAR = ["#00BAC4", "#102865", "#017A85", "#7C8CB5", "#16305F", "#9AA5B1"];
 
 function initials(lead: Lead) {
   const s = (lead.company || lead.name || lead.email || "?").trim();
@@ -137,10 +137,10 @@ export default function PipelinePage() {
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Leads activos" value={String(leads.length)} hint={`${pending} nuevos`} color="#22d3ee" />
-        <Stat label="En pipeline" value={String(contacted + replied)} hint="en movimiento" color="#a78bfa" />
-        <Stat label="Propuesta" value={String(replied)} hint="calificados / respondieron" color="#fb923c" />
-        <Stat label="Cerrados" value={String(won)} hint="ganados" color="#34d399" />
+        <Stat label="Leads activos" value={String(leads.length)} hint={`${pending} nuevos`} color="#00BAC4" />
+        <Stat label="En pipeline" value={String(contacted + replied)} hint="en movimiento" color="#7C8CB5" />
+        <Stat label="Propuesta" value={String(replied)} hint="calificados / respondieron" color="#017A85" />
+        <Stat label="Cerrados" value={String(won)} hint="ganados" color="#102865" />
       </section>
 
       {loading ? (
