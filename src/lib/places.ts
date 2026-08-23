@@ -2,6 +2,7 @@ import { enrichPlacesWithEmails } from "@/lib/enrich-email";
 import { isLikelyChain } from "@/lib/chains";
 import { localeFromCountry, normalizeCountry } from "@/lib/locale";
 import { clampProspectingLimit, hostedOnVercel } from "@/lib/prospecting-limits";
+import { isPlacesQuotaError, searchOsmPlaces } from "@/lib/osm-places";
 
 export type Place = {
   company: string;
@@ -203,9 +204,9 @@ async function searchTextPage(
 
   const json = (await res.json()) as TextSearchResponse;
   if (!res.ok) {
+    const status = json.error?.status ? ` ${json.error.status}` : "";
     throw new Error(
-      json.error?.message ||
-        "Google Places no respondió. Revisa la API key y que Places API (New) esté habilitada.",
+      `${json.error?.message || "Google Places no respondió."}${status}`.trim(),
     );
   }
   return json;
@@ -220,29 +221,87 @@ export async function searchPlaces(input: {
   requireWebsite?: boolean;
 }): Promise<Place[]> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error(
-      "Falta GOOGLE_MAPS_API_KEY. Crea una clave en Google Cloud (Places API New) y ponla en Vercel y .env.local.",
-    );
-  }
-
   const country = normalizeCountry(input.country || "HN");
   const locale = localeFromCountry(country);
   const limit = clampProspectingLimit(input.limit);
-  const languageCode = locale === "en" ? "en" : "es";
+
+  if (!apiKey) {
+    return searchOsmPlaces({
+      niche: input.niche,
+      city: input.city,
+      country,
+      limit,
+      requireWebsite: input.requireWebsite,
+    });
+  }
+
+  try {
+    return await searchGooglePlaces({
+      apiKey,
+      niche: input.niche,
+      city: input.city,
+      country,
+      locale,
+      limit,
+      requireWebsite: input.requireWebsite,
+    });
+  } catch (error) {
+    if (!isPlacesQuotaError(error)) throw error;
+    try {
+      const osm = await searchOsmPlaces({
+        niche: input.niche,
+        city: input.city,
+        country,
+        limit,
+        requireWebsite: input.requireWebsite,
+      });
+      if (osm.length === 0) {
+        throw new Error(
+          "Google Maps llegó al cupo diario y OpenStreetMap no encontró negocios en esa zona. Prueba otro nicho o espera a que se reinicie la cuota.",
+        );
+      }
+      return osm;
+    } catch (osmError) {
+      if (osmError instanceof Error && osmError.message.includes("cupo diario")) {
+        throw osmError;
+      }
+      const detail =
+        osmError instanceof Error ? osmError.message : "OSM no respondió";
+      throw new Error(
+        `Google Maps llegó al cupo diario. Fallback OpenStreetMap: ${detail}`,
+      );
+    }
+  }
+}
+
+async function searchGooglePlaces(input: {
+  apiKey: string;
+  niche: string;
+  city: string;
+  country: string;
+  locale: "es" | "en";
+  limit: number;
+  requireWebsite?: boolean;
+}): Promise<Place[]> {
+  const languageCode = input.locale === "en" ? "en" : "es";
   const includedType = includedTypeFor(input.niche);
-  const queries = queryVariants(input.niche, input.city, country, locale);
+  const queries = queryVariants(
+    input.niche,
+    input.city,
+    input.country,
+    input.locale,
+  );
   const maxPages = hostedOnVercel() ? 2 : 8;
   const maxQueries = hostedOnVercel() ? 1 : queries.length;
 
   const seen = new Set<string>();
   const places: Place[] = [];
 
-  for (let q = 0; q < maxQueries && places.length < limit; q++) {
+  for (let q = 0; q < maxQueries && places.length < input.limit; q++) {
     let pageToken: string | undefined;
-    for (let page = 0; page < maxPages && places.length < limit; page++) {
+    for (let page = 0; page < maxPages && places.length < input.limit; page++) {
       const json = await searchTextPage(
-        apiKey,
+        input.apiKey,
         queries[q],
         languageCode,
         q === 0 ? includedType : undefined,
@@ -259,7 +318,7 @@ export async function searchPlaces(input: {
         if (seen.has(key)) continue;
         seen.add(key);
         places.push(place);
-        if (places.length >= limit) break;
+        if (places.length >= input.limit) break;
       }
       pageToken = json.nextPageToken;
       if (!pageToken) break;
@@ -301,5 +360,6 @@ export async function searchContactablePlaces(input: {
     scanned: places.length,
     withWebsite: withWebsite.length,
     withEmail,
+    source: places[0]?.notes.includes("OpenStreetMap") ? "osm" : "maps",
   };
 }

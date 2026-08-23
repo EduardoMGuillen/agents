@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
     if (found.scanned === 0) {
       return NextResponse.json(
-        { error: "No encontré negocios en Google Maps para esa zona." },
+        { error: "No encontré negocios en Maps ni en OpenStreetMap para esa zona." },
         { status: 404 },
       );
     }
@@ -66,10 +66,12 @@ export async function POST(req: Request) {
         notes: p.notes,
       })),
       "marketing_agent",
-      `Maps ${parsed.data.niche} · ${parsed.data.city}`,
+      found.source === "osm"
+        ? `OpenStreetMap ${parsed.data.niche} · ${parsed.data.city}`
+        : `Maps ${parsed.data.niche} · ${parsed.data.city}`,
       {
         meta: {
-          kind: "maps",
+          kind: found.source === "osm" ? "osm" : "maps",
           scanned: found.scanned,
           withWebsite: found.withWebsite,
           withEmail: found.withEmail.length,
@@ -83,6 +85,7 @@ export async function POST(req: Request) {
         found: found.scanned,
         withWebsite: found.withWebsite,
         withEmail: found.withEmail.length,
+        source: found.source,
       },
       { status: 201 },
     );

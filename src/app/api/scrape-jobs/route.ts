@@ -41,15 +41,19 @@ export async function POST(req: Request) {
       thorough: true,
     });
 
+    const kind = found.source === "osm" ? "osm" : "scrapling";
     const campaign = await store.createCampaign({
-      name: `Scrapling ${parsed.data.niche} · ${parsed.data.city}`,
+      name:
+        found.source === "osm"
+          ? `OpenStreetMap ${parsed.data.niche} · ${parsed.data.city}`
+          : `Scrapling ${parsed.data.niche} · ${parsed.data.city}`,
       niche: parsed.data.niche,
       city: parsed.data.city,
       country,
       locale,
       status: found.withEmail.length ? "done" : "error",
       notes: stringifyCampaignMeta({
-        kind: "scrapling",
+        kind,
         limit,
         scanned: found.scanned,
         withWebsite: found.withWebsite,
@@ -60,7 +64,7 @@ export async function POST(req: Request) {
 
     if (found.scanned === 0) {
       return NextResponse.json(
-        { error: "No encontré negocios en Google Maps para esa zona.", campaign },
+        { error: "No encontré negocios en Maps ni en OpenStreetMap para esa zona.", campaign },
         { status: 404 },
       );
     }
@@ -96,7 +100,7 @@ export async function POST(req: Request) {
       {
         campaignId: campaign.id,
         meta: {
-          kind: "scrapling",
+          kind,
           limit,
           scanned: found.scanned,
           withWebsite: found.withWebsite,
@@ -111,6 +115,7 @@ export async function POST(req: Request) {
         withWebsite: found.withWebsite,
         withEmail: found.withEmail.length,
         campaign,
+        source: found.source,
       },
       { status: 201 },
     );

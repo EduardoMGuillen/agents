@@ -17,6 +17,7 @@ type Batch = {
 };
 
 const KIND_LABEL: Record<string, string> = {
+  osm: "OpenStreetMap",
   scrapling: "Scrapling",
   maps: "Maps",
   csv: "CSV",
