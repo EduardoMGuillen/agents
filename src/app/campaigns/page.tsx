@@ -95,15 +95,7 @@ export default function CampaignsPage() {
     });
     const json = await res.json();
     setBusy(null);
-    if (!res.ok) {
-      setError(typeof json.error === "string" ? json.error : "No pude encolar Scrapling");
-      return;
-    }
-    setError(null);
-    alert(
-      json.hint ||
-        "Búsqueda encolada. En tu PC deja corriendo: npm run scrape:worker",
-    );
+    applyResult(json, res.ok);
     await load();
   }
 
@@ -134,8 +126,8 @@ export default function CampaignsPage() {
         <form onSubmit={onPlaces} className="panel space-y-4 p-5">
           <h2 className="display text-xl">Buscar negocios</h2>
           <p className="text-sm text-[var(--muted)]">
-            Google Maps encuentra PYMEs (sin cadenas). Scrapling corre en tu PC
-            y saca el email de la web — más lento, suele hallar más correos.
+            Google Maps encuentra PYMEs (sin cadenas). El botón Scrapling corre
+            en Vercel: busca y saca emails públicos de las webs.
           </p>
           <div>
             <label className="label">Nicho</label>
@@ -166,7 +158,7 @@ export default function CampaignsPage() {
                 if (form) onScrapling(form);
               }}
             >
-              {busy === "scrapling" ? "Encolando…" : "Buscar con Scrapling"}
+              {busy === "scrapling" ? "Buscando emails…" : "Buscar con Scrapling"}
             </button>
           </div>
         </form>
@@ -174,8 +166,7 @@ export default function CampaignsPage() {
         <form onSubmit={onCsv} className="panel space-y-4 p-5">
           <h2 className="display text-xl">Importar CSV</h2>
           <p className="text-sm text-[var(--muted)]">
-            CSV, o encola una búsqueda Scrapling arriba y corre
-            <code className="ml-1 text-[var(--accent)]">npm run scrape:worker</code>
+            CSV con columnas de empresa, email, país…
           </p>
           <div>
             <label className="label">Archivo .csv</label>

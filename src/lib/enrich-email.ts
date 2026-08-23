@@ -32,9 +32,9 @@ function extractEmails(html: string, siteDomain: string | null) {
   return unique;
 }
 
-async function fetchHtml(url: string) {
+async function fetchHtml(url: string, timeoutMs = 7000) {
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 7000);
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
       signal: ctrl.signal,
@@ -100,12 +100,17 @@ async function hunterEmail(domain: string) {
   }
 }
 
-export async function findPublicEmail(website: string | null) {
+export async function findPublicEmail(
+  website: string | null,
+  options?: { thorough?: boolean },
+) {
   if (!website) return null;
   const domain = domainOf(website);
   const urls = contactUrls(website);
-  for (const url of urls.slice(0, 3)) {
-    const html = await fetchHtml(url);
+  const take = options?.thorough ? urls.length : 3;
+  const timeout = options?.thorough ? 10000 : 7000;
+  for (const url of urls.slice(0, take)) {
+    const html = await fetchHtml(url, timeout);
     if (!html) continue;
     const emails = extractEmails(html, domain);
     if (emails[0]) return emails[0];
@@ -117,6 +122,7 @@ export async function findPublicEmail(website: string | null) {
 export async function enrichPlacesWithEmails<T extends { website: string | null; email: string | null }>(
   places: T[],
   concurrency = 4,
+  thorough = false,
 ): Promise<T[]> {
   const out = new Array<T>(places.length);
   let i = 0;
@@ -128,7 +134,7 @@ export async function enrichPlacesWithEmails<T extends { website: string | null;
         out[idx] = place;
         continue;
       }
-      const email = await findPublicEmail(place.website);
+      const email = await findPublicEmail(place.website, { thorough });
       out[idx] = { ...place, email };
     }
   }

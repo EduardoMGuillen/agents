@@ -252,10 +252,15 @@ export async function searchContactablePlaces(input: {
   country?: string;
   locale?: "es" | "en";
   limit?: number;
+  thorough?: boolean;
 }) {
   const places = await searchPlaces(input);
   const withWebsite = places.filter((p) => Boolean(p.website));
-  const enriched = await enrichPlacesWithEmails(withWebsite);
+  const enriched = await enrichPlacesWithEmails(
+    withWebsite,
+    input.thorough ? 3 : 4,
+    Boolean(input.thorough),
+  );
   const withEmail = enriched.filter((p) => Boolean(p.email));
   return {
     scanned: places.length,

@@ -46,7 +46,11 @@ COUNTRY_NAMES = {
 
 def office_base() -> str:
     raw = os.getenv("NEXUS_OFFICE_WEBHOOK_URL", "").replace("/api/webhooks/form", "")
-    return (raw or os.getenv("NEXT_PUBLIC_APP_URL") or "http://localhost:3000").rstrip("/")
+    return (
+        raw
+        or os.getenv("NEXT_PUBLIC_APP_URL")
+        or "https://agents-office-beta.vercel.app"
+    ).rstrip("/")
 
 
 def headers() -> dict[str, str]:
