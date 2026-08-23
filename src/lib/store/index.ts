@@ -243,6 +243,31 @@ export const store = {
     return data as Campaign;
   },
 
+  async updateCampaign(
+    id: string,
+    patch: Partial<Pick<Campaign, "status" | "notes" | "name">>,
+  ): Promise<Campaign | null> {
+    const local = active();
+    if (local) return local.updateCampaign(id, patch);
+    const { data, error } = await getAdminClient()
+      .from("campaigns")
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    if (error) throw error;
+    return data as Campaign | null;
+  },
+
+  async claimScraplingJob(): Promise<Campaign | null> {
+    const queued = (await this.listCampaigns())
+      .filter((c) => c.status === "queued")
+      .sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
+    const oldest = queued[0];
+    if (!oldest) return null;
+    return this.updateCampaign(oldest.id, { status: "running" });
+  },
+
   async createEvent(input: {
     agent: string;
     event_type: string;

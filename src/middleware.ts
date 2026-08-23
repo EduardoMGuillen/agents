@@ -26,7 +26,8 @@ export function middleware(req: NextRequest) {
     process.env.FORM_WEBHOOK_SECRET?.trim();
   if (
     workerSecret &&
-    pathname === "/api/leads/import" &&
+    (pathname === "/api/leads/import" ||
+      pathname.startsWith("/api/scrape-jobs")) &&
     req.headers.get("x-nexus-worker-secret") === workerSecret
   ) {
     return NextResponse.next();

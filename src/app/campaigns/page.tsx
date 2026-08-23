@@ -77,6 +77,36 @@ export default function CampaignsPage() {
     await load();
   }
 
+  async function onScrapling(form: HTMLFormElement) {
+    setBusy("scrapling");
+    setError(null);
+    setCreated([]);
+    setStats(null);
+    const fd = new FormData(form);
+    const res = await fetch("/api/scrape-jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        niche: String(fd.get("niche")),
+        city: String(fd.get("city")),
+        country: String(fd.get("country") || "HN"),
+        limit: Number(fd.get("limit") || 12),
+      }),
+    });
+    const json = await res.json();
+    setBusy(null);
+    if (!res.ok) {
+      setError(typeof json.error === "string" ? json.error : "No pude encolar Scrapling");
+      return;
+    }
+    setError(null);
+    alert(
+      json.hint ||
+        "Búsqueda encolada. En tu PC deja corriendo: npm run scrape:worker",
+    );
+    await load();
+  }
+
   async function onCsv(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy("csv");
@@ -102,10 +132,10 @@ export default function CampaignsPage() {
 
       <section className="grid gap-10 lg:grid-cols-2">
         <form onSubmit={onPlaces} className="panel space-y-4 p-5">
-          <h2 className="display text-xl">Buscar en Google Maps</h2>
+          <h2 className="display text-xl">Buscar negocios</h2>
           <p className="text-sm text-[var(--muted)]">
-            Sin McDonald’s, Starbucks, Walmart y similares. LATAM y España →
-            español; EE.UU., Europa, Asia… → inglés.
+            Google Maps encuentra PYMEs (sin cadenas). Scrapling corre en tu PC
+            y saca el email de la web — más lento, suele hallar más correos.
           </p>
           <div>
             <label className="label">Nicho</label>
@@ -123,16 +153,29 @@ export default function CampaignsPage() {
             <label className="label">Máximo</label>
             <input name="limit" type="number" min={5} max={20} defaultValue={12} className="field" />
           </div>
-          <button className="btn btn-primary" disabled={!!busy}>
-            {busy === "places" ? "Buscando y sacando emails…" : "Buscar leads"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn btn-primary" disabled={!!busy}>
+              {busy === "places" ? "Buscando y sacando emails…" : "Buscar ahora (Maps)"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={!!busy}
+              onClick={(ev) => {
+                const form = (ev.currentTarget as HTMLButtonElement).form;
+                if (form) onScrapling(form);
+              }}
+            >
+              {busy === "scrapling" ? "Encolando…" : "Buscar con Scrapling"}
+            </button>
+          </div>
         </form>
 
         <form onSubmit={onCsv} className="panel space-y-4 p-5">
           <h2 className="display text-xl">Importar CSV</h2>
           <p className="text-sm text-[var(--muted)]">
-            También puedes pegar webs en un .txt y correr Scrapling en tu PC:
-            python scripts/scrapling/scrape_import.py --sites-file sites.txt
+            CSV, o encola una búsqueda Scrapling arriba y corre
+            <code className="ml-1 text-[var(--accent)]">npm run scrape:worker</code>
           </p>
           <div>
             <label className="label">Archivo .csv</label>
@@ -192,6 +235,7 @@ export default function CampaignsPage() {
                   {c.name}
                   <span className="ml-2 text-[var(--muted)]">
                     {c.niche} · {c.city}
+                    {c.status !== "active" ? ` · ${c.status}` : ""}
                   </span>
                 </span>
               </li>

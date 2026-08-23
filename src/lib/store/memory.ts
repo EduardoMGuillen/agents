@@ -183,6 +183,16 @@ export const memoryStore = {
     return campaign;
   },
 
+  async updateCampaign(
+    id: string,
+    patch: Partial<Pick<Campaign, "status" | "notes" | "name">>,
+  ) {
+    const row = db().campaigns.find((c) => c.id === id);
+    if (!row) return null;
+    Object.assign(row, patch, { updated_at: now() });
+    return row;
+  },
+
   async createEvent(
     input: Omit<AgentEvent, "id" | "created_at">,
   ): Promise<AgentEvent> {

@@ -310,6 +310,40 @@ export const pgStore = {
     } as Campaign;
   },
 
+  async updateCampaign(
+    id: string,
+    patch: Partial<Pick<Campaign, "status" | "notes" | "name">>,
+  ) {
+    const next = await this.listCampaigns().then((rows) =>
+      rows.find((c) => c.id === id),
+    );
+    if (!next) return null;
+    await query(
+      `update campaigns set name=$2, status=$3, notes=$4, updated_at=now() where id=$1`,
+      [
+        id,
+        patch.name ?? next.name,
+        patch.status ?? next.status,
+        patch.notes ?? next.notes,
+      ],
+    );
+    const { rows } = await query(`select * from campaigns where id=$1`, [id]);
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      id: String(row.id),
+      name: String(row.name),
+      niche: (row.niche as string) ?? null,
+      city: (row.city as string) ?? null,
+      country: String(row.country ?? "MX"),
+      locale: (row.locale as "es" | "en") ?? "es",
+      status: String(row.status),
+      notes: (row.notes as string) ?? null,
+      created_at: new Date(String(row.created_at)).toISOString(),
+      updated_at: new Date(String(row.updated_at)).toISOString(),
+    } as Campaign;
+  },
+
   async createEvent(input: {
     agent: string;
     event_type: string;

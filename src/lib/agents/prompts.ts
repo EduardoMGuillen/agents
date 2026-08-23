@@ -3,6 +3,14 @@ import { countryName } from "@/lib/locale";
 
 export const NEXUS_SITE = "https://www.nexusglobalsuministros.com/";
 
+export function leadHasWebsite(lead: Lead) {
+  const w = (lead.website || "").trim().toLowerCase();
+  if (!w) return false;
+  return !/(facebook|instagram|tiktok|whatsapp|wa\.me|linktr\.ee|maps\.google)/i.test(
+    w,
+  );
+}
+
 export const SALES_SYSTEM_ES = `Eres el Sales Agent de Nexus Global (nexusglobalsuministros.com).
 Nexus vende páginas web a negocios locales pequeños y medianos (no cadenas ni corporativos).
 El desarrollador humano (Eduardo) construye los sitios; tú calificas y calientas leads.
@@ -12,7 +20,10 @@ Reglas:
 - No inventes precios fijos; menciona que Eduardo cotiza según alcance.
 - Incluye siempre el link ${NEXUS_SITE} cuando invites a ver trabajo/proceso.
 - Sé transparente: eres el asistente de ventas de Nexus.
-- Pregunta para calificar: ¿tienen web hoy?, ¿qué necesitan?, ¿plazo?, ¿presupuesto aproximado?
+- Primer contacto: corto, una observación y UNA pregunta sí/no.
+- Si el lead NO tiene web (o solo Facebook/Instagram), el ángulo es primera presencia: que los encuentren en Google, no rediseño.
+- Si SÍ tiene web, el ángulo es claridad y contacto, no “hacerla de cero”.
+- Ofrece 2 ideas concretas, sin precio. No pidas presupuesto en el primer mail.
 - Si el lead quiere llamada/cotización seria, indícalo claramente en readyForHandoff=true.
 - Responde SOLO JSON válido.`;
 
@@ -25,92 +36,151 @@ Rules:
 - Do not invent fixed prices; Eduardo quotes by scope.
 - Include ${NEXUS_SITE} when inviting them to see work/process.
 - Be transparent: you are Nexus sales assistant.
-- Qualify: current website?, need?, timeline?, rough budget?
+- First touch: short, one observation, ONE yes/no question.
+- If they have NO website (or only social), pitch a first simple site. Do not talk about a redesign.
+- If they HAVE a website, pitch clarity and easier contact, not starting from scratch.
+- Offer 2 concrete ideas, no price. Do not ask for budget in the first email.
 - If they want a serious call/quote, set readyForHandoff=true.
 - Respond ONLY with valid JSON.`;
 
 function angleEs(lead: Lead, company: string, where: string) {
   const niche = (lead.niche || "").toLowerCase();
-  const hasWeb = Boolean(lead.website);
+  const hasWeb = leadHasWebsite(lead);
+  const loc = where ? ` en ${where}` : "";
+
   if (/restaurant|comida|bistro|cafe|bar|pinata|fiesta/.test(niche)) {
     return hasWeb
-      ? `Hoy mucha gente busca dónde comer o encargar antes de salir. Si la web de ${company} no se ve clara en el celular, se van con el de al lado.`
-      : `Hoy la gente busca en Google o WhatsApp dónde comer o encargar. Si ${company} no aparece bien, se van con el de al lado.`;
+      ? `Vi que ${company}${loc} ya tiene web. En comida, si no se entiende el menú, el horario y cómo pedir en el celular, la gente se va con el de al lado.`
+      : `Busqué a ${company}${loc} y no vi una web propia. Hoy mucha gente elige dónde comer desde el teléfono; si no aparecen, se van con el de al lado.`;
   }
   if (/belleza|salon|estetica/.test(niche)) {
-    return `En belleza la primera impresión es la foto y lo fácil que sea agendar. Una web simple ayuda a que ${company} se vea tan profesional como el servicio.`;
+    return hasWeb
+      ? `Vi la web de ${company}. En belleza cuenta que las fotos y el agendar se vean fáciles, no escondidos.`
+      : `${company}${loc} no tiene una página propia. En belleza la gente compara fotos y horarios en el teléfono antes de escribir.`;
   }
   if (/salud|clinic|dental|oftal|rehabil/.test(niche)) {
-    return `Quien busca un consultorio quiere confianza: ubicación, servicios y cómo contactarlos. Eso se resuelve con una web clara.`;
+    return hasWeb
+      ? `Revisé el sitio de ${company}. Quien busca consultorio quiere ver de una vez servicios, ubicación y cómo contactarlos.`
+      : `No encontré web de ${company}${loc}. Quien busca un consultorio suele googlear primero: si no hay página, eligen al que sí se ve.`;
   }
   if (/auto|taller|bateria|repara/.test(niche)) {
-    return `Cuando el carro falla, buscan el taller más cercano que inspire confianza. ${company} gana si aparece con teléfono, horario y lo que reparan.`;
+    return hasWeb
+      ? `Vi que ${company} ya tiene sitio. Cuando el carro falla, gana el taller que muestra teléfono, horario y qué reparan, sin dar vueltas.`
+      : `${company}${loc} no aparece con una web propia. Cuando el carro falla, llaman al primero que encuentren con teléfono y horario claros.`;
   }
   if (/ropa|calzado|tienda|comercio|abarro/.test(niche)) {
-    return `Aunque vendan en local, muchos clientes los buscan en internet antes de ir. Una vitrina de ${company} ayuda a no perderse frente al que sí se ve online.`;
+    return hasWeb
+      ? `Vi la web de ${company}. Aunque vendan en local, si la vitrina online no se entiende, se pierden ventas frente al que sí se ve.`
+      : `${company}${loc} no tiene vitrina web. Aunque vendan en local, muchos clientes buscan en internet antes de ir.`;
   }
   if (/legal|abogad|profesional|contab/.test(niche)) {
-    return `En servicios profesionales la web es la tarjeta de presentación: quiénes son, qué atienden y cómo escribirles.`;
+    return hasWeb
+      ? `Vi el sitio de ${company}. En servicios profesionales la web es la tarjeta: quiénes son, qué atienden y cómo escribirles, sin ruido.`
+      : `No vi web de ${company}${loc}. En servicios profesionales, sin una página, muchos asumen que el despacho no está activo.`;
   }
   if (/educa|escuela|academia/.test(niche)) {
-    return `Los papás comparan escuelas y academias en el teléfono. ${company} se ve más serio con una página de programas, ubicación y contacto.`;
+    return hasWeb
+      ? `Revisé la web de ${company}. Los papás comparan programas y contacto en el teléfono; si cuesta encontrarlos, se van.`
+      : `${company}${loc} no tiene página propia. Los papás comparan escuelas en el teléfono; el que no aparece, no entra a la lista.`;
   }
   return hasWeb
-    ? `Revisé ${company}${where ? ` en ${where}` : ""} y vi que ya tienen presencia online. A veces con un ajuste se entiende mejor lo que hacen.`
-    : `Revisé ${company}${where ? ` en ${where}` : ""}. Negocios como el suyo suelen perder clientes solo porque no se encuentran fácil en internet.`;
+    ? `Vi que ${company}${loc} ya tiene presencia online. A veces con una web más clara (qué hacen y cómo contactarlos) se dejan de perder clientes.`
+    : `Busqué a ${company}${loc} y no vi una web propia. Negocios como el suyo suelen perder clientes solo porque no se encuentran fácil en internet.`;
 }
 
 export function salesDraftFallback(lead: Lead) {
   const company = lead.company || "tu negocio";
   const where = [lead.city, countryName(lead.country)].filter(Boolean).join(", ");
+  const hasWeb = leadHasWebsite(lead);
 
   if (lead.locale === "en") {
     const place = where ? ` in ${where}` : "";
+    if (!hasWeb) {
+      return {
+        subject: `${company}: I looked you up on Google`,
+        body: `Hi,
+
+I'm Eduardo (Nexus). I build simple websites for local businesses.
+
+I searched for ${company}${place} and didn't find a site of your own. People nearby look on their phone first — if they can't find you, they call the next place.
+
+I can send 2 concrete ideas for a first page (who you are, what you do, how to reach you). No price yet.
+
+Work: ${NEXUS_SITE}
+
+Want me to send the 2 ideas?
+
+Eduardo
+Nexus Global`,
+        score: 0,
+        readyForHandoff: false,
+        qualificationNotes: "Primer contacto sin web (EN)",
+      };
+    }
     return {
-      subject: `${company} — a simple website that brings you clients`,
+      subject: `${company}: 2 ideas for your website`,
       body: `Hi,
 
-I'm Eduardo, from Nexus Global. We build websites for small and mid-size local businesses.
+I'm Eduardo (Nexus). I build websites for local businesses.
 
-I came across ${company}${place}${lead.niche ? ` (${lead.niche})` : ""}. ${
-        lead.website
-          ? `You already have a site; it may just need to be clearer so people can contact you without hunting.`
-          : `A lot of nearby customers search on their phone first. If they can't find you, they call someone else.`
-      }
+I opened the ${company}${place} site. The business is there — on a phone it's often hard to see what you do and how to contact you. That's where clients drop off.
 
-If it's useful, I can send a short idea of what your site could look like — no price until we know the scope.
+I can send 2 concrete ideas to make that page bring more messages. No price until we know the scope.
 
-A bit of our work: ${NEXUS_SITE}
+Work: ${NEXUS_SITE}
 
-If you'd rather not hear from me, say so and I won't write again.
+Want me to send the 2 ideas?
 
 Eduardo
 Nexus Global`,
       score: 0,
       readyForHandoff: false,
-      qualificationNotes: "Primer contacto natural (EN)",
+      qualificationNotes: "Primer contacto con web (EN)",
+    };
+  }
+
+  if (!hasWeb) {
+    return {
+      subject: `${company}: te busqué en Google`,
+      body: `Hola,
+
+Soy Eduardo (Nexus). Hago webs para negocios locales.
+
+${angleEs(lead, company, where)}
+
+Te puedo mandar 2 ideas concretas de una primera página para ${company} (quiénes son, qué hacen, cómo contactarlos). Sin precio todavía.
+
+Lo que hacemos: ${NEXUS_SITE}
+
+¿Te las mando?
+
+Eduardo
+Nexus Global`,
+      score: 0,
+      readyForHandoff: false,
+      qualificationNotes: "Primer contacto sin web (ES)",
     };
   }
 
   return {
-    subject: `${company}: una web sencilla para que te encuentren`,
+    subject: `${company}: 2 ideas para tu web`,
     body: `Hola,
 
-Soy Eduardo, de Nexus Global. Hacemos páginas web para negocios locales, sin paquetes inflados.
+Soy Eduardo (Nexus). Hago webs para negocios locales.
 
 ${angleEs(lead, company, where)}
 
-Si te interesa, te mando una idea corta de cómo se vería el sitio de ${company}. El precio lo vemos después, según lo que necesites.
+Te puedo mandar 2 ideas concretas para que esa página traiga más mensajes. Sin precio hasta ver el alcance.
 
-Un poco de lo que hacemos: ${NEXUS_SITE}
+Lo que hacemos: ${NEXUS_SITE}
 
-Si no aplica, dime y no te vuelvo a escribir.
+¿Te las mando?
 
 Eduardo
 Nexus Global`,
     score: 0,
     readyForHandoff: false,
-    qualificationNotes: "Primer contacto natural (ES)",
+    qualificationNotes: "Primer contacto con web (ES)",
   };
 }
 
