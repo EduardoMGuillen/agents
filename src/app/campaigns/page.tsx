@@ -4,11 +4,16 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Campaign, Lead } from "@/lib/types";
 import type { CampaignMeta } from "@/lib/campaign-meta";
+import { countryName, citiesForCountry, PROSPECT_COUNTRIES } from "@/lib/locale";
 import { leadsToCsv } from "@/lib/csv";
 import {
   ProspectingOverlay,
   type HuntInfo,
 } from "@/components/prospecting-overlay";
+import {
+  OSM_NICHE_GROUPS,
+  OSM_NICHES,
+} from "@/lib/osm-niches";
 
 type Batch = {
   campaign: Campaign;
@@ -45,6 +50,8 @@ export default function CampaignsPage() {
   const [error, setError] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<number | null>(null);
   const [maxLimit, setMaxLimit] = useState(20);
+  const [country, setCountry] = useState("HN");
+  const [city, setCity] = useState("");
   const [stats, setStats] = useState<{
     found?: number;
     withWebsite?: number;
@@ -197,21 +204,64 @@ export default function CampaignsPage() {
         <form onSubmit={onPlaces} className="panel space-y-4 p-5">
           <h2 className="display text-xl">Buscar negocios</h2>
           <p className="text-sm text-[var(--muted)]">
-            Google Maps encuentra PYMEs (sin cadenas). En local puedes pedir
-            hasta {maxLimit} webs; en Vercel el tope es 20 por el timeout. Un
-            lote grande puede tardar varios minutos.
+            Elige un tipo de negocio de OpenStreetMap. Si Maps tiene cuota,
+            buscamos exactamente esa categoría. En local puedes pedir hasta{" "}
+            {maxLimit} webs; en Vercel el tope es 20.
           </p>
           <div>
-            <label className="label">Nicho</label>
-            <input name="niche" className="field" required placeholder="restaurante, clínica…" />
+            <label className="label">País</label>
+            <select
+              name="country"
+              className="field"
+              required
+              value={country}
+              onChange={(e) => {
+                setCountry(e.target.value);
+                setCity("");
+              }}
+            >
+              {PROSPECT_COUNTRIES.map((code) => (
+                <option key={code} value={code}>
+                  {countryName(code)} ({code})
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="label">Ciudad</label>
-            <input name="city" className="field" required placeholder="Miami, Bogotá, Osaka…" />
+            <select
+              name="city"
+              className="field"
+              required
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            >
+              <option value="" disabled>
+                Elige una ciudad…
+              </option>
+              {citiesForCountry(country).map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
-            <label className="label">País</label>
-            <input name="country" className="field" defaultValue="HN" placeholder="HN, MX, US, ES, JP…" />
+            <label className="label">Nicho (OpenStreetMap)</label>
+            <select name="niche" className="field" required defaultValue="">
+              <option value="" disabled>
+                Elige un tipo de negocio…
+              </option>
+              {OSM_NICHE_GROUPS.map((group) => (
+                <optgroup key={group} label={group}>
+                  {OSM_NICHES.filter((n) => n.group === group).map((n) => (
+                    <option key={n.value} value={n.value}>
+                      {n.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
           <div>
             <label className="label">Máximo</label>

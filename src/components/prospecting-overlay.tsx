@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { nicheSearchText } from "@/lib/osm-niches";
 
 export type HuntMode = "places" | "scrapling" | "csv";
 
@@ -93,7 +94,7 @@ export function ProspectingOverlay({ hunt }: { hunt: HuntInfo | null }) {
             <div className="mb-5 grid grid-cols-2 gap-2 text-sm">
               {hunt.mode !== "csv" ? (
                 <>
-                  <Info label="Nicho" value={hunt.niche || "—"} />
+                  <Info label="Nicho" value={nicheSearchText(hunt.niche || "") || "—"} />
                   <Info label="Ciudad" value={hunt.city || "—"} />
                   <Info label="País" value={hunt.country || "—"} />
                   <Info label="Máximo" value={String(hunt.limit ?? "—")} />

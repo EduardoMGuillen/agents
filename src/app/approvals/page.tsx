@@ -352,7 +352,7 @@ export default function ApprovalsPage() {
 
                     <iframe
                       title={previewSubject}
-                      className="h-[380px] w-full overflow-hidden rounded-2xl border border-[var(--line)] bg-black"
+                      className="h-[420px] w-full overflow-hidden rounded-2xl border border-[var(--line)] bg-transparent"
                       srcDoc={renderEmailHtml(previewBody, {
                         previewLogo: "/nexus-logo.png",
                       })}

@@ -1,11 +1,12 @@
 const SITE = "https://www.nexusglobalsuministros.com/";
+const IG = "https://www.instagram.com/nexusglobalhn/";
+const PHONE = "+504 9882-3627";
+const PHONE_TEL = "+50498823627";
 const TEAL = "#00BAC4";
 const NAVY = "#102865";
 const INK = "#102865";
 const MUTED = "#5B6472";
 const LINE = "#E2E8F0";
-const BLACK = "#000000";
-const PAPER = "#1A1A1A";
 const FONT = "Inter,Arial,Helvetica,sans-serif";
 
 export function emailAssetOrigin() {
@@ -62,9 +63,6 @@ export function renderEmailHtml(
   const kicker = en ? "Web · Digital solutions" : "Desarrollo web · Soluciones digitales";
   const tagline = en ? "Websites that bring clients" : "Webs que sí traen clientes";
   const cta = en ? "See our work" : "Ver nuestro trabajo";
-  const footer = en
-    ? "Websites for local businesses · Nexus Global"
-    : "Páginas web para negocios locales · Nexus Global";
   const preheader = en
     ? "A note from Nexus Global — websites that bring clients."
     : "Un mensaje de Nexus Global — webs que sí traen clientes.";
@@ -78,17 +76,17 @@ export function renderEmailHtml(
   <meta name="supported-color-schemes" content="light"/>
   <title>Nexus Global</title>
 </head>
-<body style="margin:0;padding:0;background:${BLACK};">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${BLACK};">${escapeHtml(preheader)}</div>
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${BLACK};padding:28px 12px;">
+<body style="margin:0;padding:0;background:transparent;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader)}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:transparent;padding:28px 12px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:${BLACK};border:1px solid #16305F;border-radius:16px;overflow:hidden;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid ${LINE};border-radius:16px;overflow:hidden;">
           <tr>
-            <td align="center" style="background:${BLACK};padding:28px 28px 18px 28px;">
-              <img src="${logo}" alt="Nexus" width="108" height="108" style="display:block;border:0;width:108px;height:108px;margin:0 auto;"/>
+            <td align="center" style="background:#ffffff;padding:28px 28px 18px 28px;">
+              <img src="${logo}" alt="Nexus" width="168" style="display:block;border:0;width:168px;height:auto;max-width:168px;margin:0 auto;"/>
               <p style="margin:14px 0 0 0;font-family:${FONT};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${TEAL};font-weight:600;">${kicker}</p>
-              <p style="margin:6px 0 0 0;font-family:${FONT};font-size:13px;color:#9AA5B1;">${tagline}</p>
+              <p style="margin:6px 0 0 0;font-family:${FONT};font-size:13px;color:${MUTED};">${tagline}</p>
             </td>
           </tr>
           <tr>
@@ -100,7 +98,7 @@ export function renderEmailHtml(
             </td>
           </tr>
           <tr>
-            <td style="background:#ffffff;padding:8px 32px 32px 32px;font-family:${FONT};">
+            <td style="background:#ffffff;padding:8px 32px 28px 32px;font-family:${FONT};">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td style="padding-top:20px;border-top:1px solid ${LINE};">
@@ -119,13 +117,19 @@ export function renderEmailHtml(
             </td>
           </tr>
           <tr>
-            <td style="background:${PAPER};padding:18px 32px;font-family:${FONT};font-size:11px;line-height:1.55;color:#9AA5B1;">
-              ${footer}<br/>
-              <a href="${SITE}" style="color:${TEAL};text-decoration:none;">nexusglobalsuministros.com</a>
+            <td style="background:#ffffff;padding:0 32px 28px 32px;font-family:${FONT};font-size:13px;line-height:1.8;color:${INK};">
+              <p style="margin:0 0 4px 0;">
+                <a href="tel:${PHONE_TEL}" style="color:${INK};text-decoration:none;">☎ ${PHONE}</a>
+              </p>
+              <p style="margin:0 0 4px 0;">
+                <a href="${IG}" style="color:${INK};text-decoration:none;">📷 Nexusglobalhn</a>
+              </p>
+              <p style="margin:0 0 4px 0;">
+                <a href="${SITE}" style="color:${TEAL};text-decoration:none;">🌐 www.nexusglobalsuministros.com</a>
+              </p>
             </td>
           </tr>
         </table>
-        <p style="margin:16px 0 0 0;font-family:${FONT};font-size:11px;color:#5B6472;">${en ? "Nexus · Connecting your business to the digital future" : "Nexus · Conectando tu negocio con el futuro digital"}</p>
       </td>
     </tr>
   </table>

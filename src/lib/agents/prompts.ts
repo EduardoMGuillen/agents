@@ -24,6 +24,7 @@ Reglas:
 - Si el lead NO tiene web (o solo Facebook/Instagram), el ángulo es primera presencia: que los encuentren en Google, no rediseño.
 - Si SÍ tiene web, el ángulo es claridad y contacto, no “hacerla de cero”.
 - Ofrece 2 ideas concretas, sin precio. No pidas presupuesto en el primer mail.
+- En el primer contacto ofrece una demo gratuita sin compromiso (una muestra de cómo se vería su web). No es el pie del mail: va en el cuerpo, como la invitación.
 - Si el lead quiere llamada/cotización seria, indícalo claramente en readyForHandoff=true.
 - Responde SOLO JSON válido.`;
 
@@ -40,6 +41,7 @@ Rules:
 - If they have NO website (or only social), pitch a first simple site. Do not talk about a redesign.
 - If they HAVE a website, pitch clarity and easier contact, not starting from scratch.
 - Offer 2 concrete ideas, no price. Do not ask for budget in the first email.
+- First touch must offer a free demo with no commitment (a sample of how their site could look). Put it in the body, not as a footer slogan.
 - If they want a serious call/quote, set readyForHandoff=true.
 - Respond ONLY with valid JSON.`;
 
@@ -104,11 +106,11 @@ I'm Eduardo (Nexus). I build simple websites for local businesses.
 
 I searched for ${company}${place} and didn't find a site of your own. People nearby look on their phone first — if they can't find you, they call the next place.
 
-I can send 2 concrete ideas for a first page (who you are, what you do, how to reach you). No price yet.
+I can send a free demo of a first page (who you are, what you do, how to reach you). No commitment and no price yet.
 
 Work: ${NEXUS_SITE}
 
-Want me to send the 2 ideas?
+Want me to send the free demo?
 
 Eduardo
 Nexus Global`,
@@ -125,11 +127,11 @@ I'm Eduardo (Nexus). I build websites for local businesses.
 
 I opened the ${company}${place} site. The business is there — on a phone it's often hard to see what you do and how to contact you. That's where clients drop off.
 
-I can send 2 concrete ideas to make that page bring more messages. No price until we know the scope.
+I can send a free demo with 2 concrete ideas to make that page bring more messages. No commitment; no price until we know the scope.
 
 Work: ${NEXUS_SITE}
 
-Want me to send the 2 ideas?
+Want me to send the free demo?
 
 Eduardo
 Nexus Global`,
@@ -148,11 +150,11 @@ Soy Eduardo (Nexus). Hago webs para negocios locales.
 
 ${angleEs(lead, company, where)}
 
-Te puedo mandar 2 ideas concretas de una primera página para ${company} (quiénes son, qué hacen, cómo contactarlos). Sin precio todavía.
+Te puedo mandar una demo gratis de una primera página para ${company} (quiénes son, qué hacen, cómo contactarlos). Sin compromiso y sin precio todavía.
 
 Lo que hacemos: ${NEXUS_SITE}
 
-¿Te las mando?
+¿Te mando la demo?
 
 Eduardo
 Nexus Global`,
@@ -170,11 +172,11 @@ Soy Eduardo (Nexus). Hago webs para negocios locales.
 
 ${angleEs(lead, company, where)}
 
-Te puedo mandar 2 ideas concretas para que esa página traiga más mensajes. Sin precio hasta ver el alcance.
+Te puedo mandar una demo gratis con 2 ideas concretas para que esa página traiga más mensajes. Sin compromiso; el precio se ve después, según alcance.
 
 Lo que hacemos: ${NEXUS_SITE}
 
-¿Te las mando?
+¿Te mando la demo?
 
 Eduardo
 Nexus Global`,

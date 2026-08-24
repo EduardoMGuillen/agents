@@ -1,8 +1,9 @@
 import { enrichPlacesWithEmails } from "@/lib/enrich-email";
 import { isLikelyChain } from "@/lib/chains";
-import { localeFromCountry, normalizeCountry } from "@/lib/locale";
+import { inferCountryFromCity, localeFromCountry, normalizeCountry } from "@/lib/locale";
 import { clampProspectingLimit, hostedOnVercel } from "@/lib/prospecting-limits";
 import { isPlacesQuotaError, searchOsmPlaces } from "@/lib/osm-places";
+import { nicheSearchText } from "@/lib/osm-niches";
 
 export type Place = {
   company: string;
@@ -221,7 +222,10 @@ export async function searchPlaces(input: {
   requireWebsite?: boolean;
 }): Promise<Place[]> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
-  const country = normalizeCountry(input.country || "HN");
+  const country = inferCountryFromCity(
+    input.city,
+    normalizeCountry(input.country || "HN"),
+  );
   const locale = localeFromCountry(country);
   const limit = clampProspectingLimit(input.limit);
 
@@ -253,11 +257,11 @@ export async function searchPlaces(input: {
         city: input.city,
         country,
         limit,
-        requireWebsite: input.requireWebsite,
+        requireWebsite: false,
       });
       if (osm.length === 0) {
         throw new Error(
-          "Google Maps llegó al cupo diario y OpenStreetMap no encontró negocios en esa zona. Prueba otro nicho o espera a que se reinicie la cuota.",
+          `Google Maps llegó al cupo diario y OpenStreetMap no encontró ${input.niche} en ${input.city} (${country}). Revisa que el país sea el correcto (Guatemala = GT).`,
         );
       }
       return osm;
@@ -284,9 +288,9 @@ async function searchGooglePlaces(input: {
   requireWebsite?: boolean;
 }): Promise<Place[]> {
   const languageCode = input.locale === "en" ? "en" : "es";
-  const includedType = includedTypeFor(input.niche);
+  const includedType = includedTypeFor(nicheSearchText(input.niche));
   const queries = queryVariants(
-    input.niche,
+    nicheSearchText(input.niche),
     input.city,
     input.country,
     input.locale,

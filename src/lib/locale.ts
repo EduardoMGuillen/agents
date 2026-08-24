@@ -79,6 +79,95 @@ const COUNTRY_LABEL: Record<string, string> = {
   US: "Estados Unidos",
 };
 
+export function inferCountryFromCity(city: string, fallback = "HN") {
+  const t = (city || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (/\bguatemala\b/.test(t)) return "GT";
+  if (/san salvador/.test(t)) return "SV";
+  if (/tegucigalpa|san pedro sula|choloma/.test(t)) return "HN";
+  if (/\bmexico\b|cdmx|ciudad de mexico|guadalajara|monterrey/.test(t)) {
+    return "MX";
+  }
+  if (/bogota|medellin|cali/.test(t)) return "CO";
+  if (/managua/.test(t)) return "NI";
+  if (/san jose/.test(t) && /costa/.test(t)) return "CR";
+  if (/miami|houston|los angeles|new york/.test(t)) return "US";
+  if (/madrid|barcelona|valencia/.test(t)) return "ES";
+  return normalizeCountry(fallback);
+}
+
+export const PROSPECT_COUNTRIES = [
+  "HN",
+  "GT",
+  "SV",
+  "NI",
+  "CR",
+  "PA",
+  "MX",
+  "CO",
+  "US",
+  "ES",
+] as const;
+
+export const CITIES_BY_COUNTRY: Record<string, string[]> = {
+  HN: [
+    "Tegucigalpa",
+    "San Pedro Sula",
+    "Choloma",
+    "La Ceiba",
+    "El Progreso",
+    "Comayagua",
+    "Choluteca",
+    "Puerto Cortés",
+    "Danlí",
+    "Siguatepeque",
+  ],
+  GT: [
+    "Ciudad de Guatemala",
+    "Mixco",
+    "Villa Nueva",
+    "Quetzaltenango",
+    "Escuintla",
+    "Antigua Guatemala",
+    "Cobán",
+    "Huehuetenango",
+    "Puerto Barrios",
+  ],
+  SV: ["San Salvador", "Santa Ana", "San Miguel", "Soyapango", "Santa Tecla", "Mejicanos"],
+  NI: ["Managua", "León", "Masaya", "Granada", "Estelí", "Chinandega"],
+  CR: ["San José", "Alajuela", "Cartago", "Heredia", "Puntarenas", "Limón"],
+  PA: ["Ciudad de Panamá", "San Miguelito", "Colón", "David", "La Chorrera"],
+  MX: [
+    "Ciudad de México",
+    "Guadalajara",
+    "Monterrey",
+    "Puebla",
+    "Tijuana",
+    "León",
+    "Mérida",
+    "Cancún",
+    "Querétaro",
+  ],
+  CO: ["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena", "Bucaramanga"],
+  US: [
+    "Miami",
+    "Houston",
+    "Los Angeles",
+    "New York",
+    "Dallas",
+    "Chicago",
+    "Atlanta",
+    "Orlando",
+  ],
+  ES: ["Madrid", "Barcelona", "Valencia", "Sevilla", "Málaga", "Bilbao"],
+};
+
+export function citiesForCountry(country: string) {
+  return CITIES_BY_COUNTRY[normalizeCountry(country)] ?? [];
+}
+
 export function countryName(country: string | null | undefined) {
   const code = normalizeCountry(country);
   return COUNTRY_LABEL[code] ?? country ?? "";

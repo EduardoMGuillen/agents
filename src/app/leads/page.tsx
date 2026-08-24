@@ -6,6 +6,7 @@ import type { Lead, LeadStatus } from "@/lib/types";
 import { LEAD_STATUSES, STATUS_LABELS } from "@/lib/types";
 import { ScorePill, StatusBadge } from "@/components/status-badge";
 import { countryName } from "@/lib/locale";
+import { leadsToCsv } from "@/lib/csv";
 
 type ReplyFilter = "" | "not_sent" | "waiting" | "replied";
 
@@ -101,6 +102,25 @@ export default function LeadsPage() {
     });
   }, [leads, replyFilter, nameQuery, country]);
 
+  function exportVisible() {
+    if (visible.length === 0) return;
+    const blob = new Blob([leadsToCsv(visible)], {
+      type: "text/csv;charset=utf-8",
+    });
+    const bits = [
+      "leads",
+      status || "todos",
+      replyFilter || "todas-respuestas",
+      country || "todos-paises",
+    ];
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${bits.join("_")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -116,6 +136,13 @@ export default function LeadsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <button
+            className="btn btn-ghost"
+            disabled={visible.length === 0}
+            onClick={exportVisible}
+          >
+            Exportar CSV ({visible.length})
+          </button>
           <button
             className="btn btn-ghost"
             disabled={saving}
